@@ -21,4 +21,6 @@
 #define ADDR_OK GPIO_PIN_3
 #define INPUT_FAST GPIO_PIN_2
 
+#define DEFAULT_ADDRESS 0x5555
+
 #endif /* CONFIG_DEFINES_H_ */

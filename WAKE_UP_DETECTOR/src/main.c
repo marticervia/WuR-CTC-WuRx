@@ -43,7 +43,8 @@
 #include "config_defines.h"
 #include "power_config.h"
 
-volatile uint32_t intr_flag = 0;
+COMP_HandleTypeDef hcomp1;
+TIM_HandleTypeDef  timeout_timer;
 
 /** @addtogroup STM32L0xx_HAL_Examples
   * @{
@@ -54,16 +55,26 @@ volatile uint32_t intr_flag = 0;
   */
 
 /* Private typedef -----------------------------------------------------------*/
+typedef enum wurx_states{
+	WURX_SLEEP = 0,
+	WURX_WAITING_PREAMBLE = 1,
+	WURX_DECODING_PREAMBLE = 2,
+	WURX_DECODING_PAYLOAD = 3,
+	WURX_GOING_TO_SLEEP = 4,
+}wurx_states_t;
+
+typedef struct wurx_context{
+	wurx_states_t wurx_state;
+	uint16_t wurx_address;
+}wurx_context_t;
+
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+static volatile uint32_t timer_timeout = 0;
 /* Private function prototypes -----------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
-#ifdef USE_CMP
-	COMP_HandleTypeDef hcomp1;
-#endif
-
 
 
 static void sleepMCU(void){
@@ -80,6 +91,62 @@ static void sleepMCU(void){
     SystemPower_ConfigSTOP();
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* Set timeout flag */
+	timer_timeout = 1;
+}
+
+
+static void initWuRxContext(wurx_context_t* context){
+	context->wurx_address = DEFAULT_ADDRESS;
+	context->wurx_state = WURX_SLEEP;
+
+	/* use Timer 2 with a 100 us timeout*/
+	HAL_TIM_Base_DeInit(&timeout_timer);
+	timeout_timer.Instance = TIM2;
+}
+
+/* For now let's use the SLOW solution of struct + switch
+ *  if 16 MHz is not enough start using uglier but faster solutions
+ */
+
+static void WuRxStateMachine(wurx_context_t* context){
+
+	switch(context->wurx_state){
+		case WURX_SLEEP:
+			/* this one blocks until MCU wakes*/
+			sleepMCU();
+			__TIM2_CLK_ENABLE();
+			/* wait 100 us for preamble init.*/
+			timeout_timer.Init.Period = 10000 - 1;
+			timeout_timer.Init.Prescaler = (uint32_t) ((SystemCoreClock / 10000) - 1);
+			timeout_timer.Init.ClockDivision = 0;
+			timeout_timer.Init.CounterMode = TIM_COUNTERMODE_UP;
+			HAL_TIM_Base_Init(&timeout_timer);
+			HAL_TIM_Base_Start_IT(&timeout_timer);
+			context->wurx_state = WURX_WAITING_PREAMBLE;
+			break;
+		case WURX_WAITING_PREAMBLE:
+			if(timer_timeout){
+				timer_timeout = 0;
+				HAL_TIM_Base_Stop_IT(&timeout_timer);
+				__TIM2_CLK_DISABLE();
+				context->wurx_state = WURX_SLEEP;
+			}
+			/* add logic to read the preamble */
+			break;
+		case WURX_DECODING_PREAMBLE:
+			break;
+		case WURX_DECODING_PAYLOAD:
+			break;
+		default:
+		initWuRxContext(context);
+		break;
+	}
+}
+
+
 /* sets all pins to analog input, but SWD */
 
 /**
@@ -89,39 +156,30 @@ static void sleepMCU(void){
 */
 int main(void)
 {
-  /* STM32L0xx HAL library initialization:
-       - Configure the Flash prefetch, Flash preread and Buffer caches
-       - Systick timer is configured by default as source of time base, but user
-             can eventually implement his proper time base source (a general purpose
-             timer for example or other time source), keeping in mind that Time base
-             duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
-             handled in milliseconds basis.
-       - Low Level Initialization
-     */
-  HAL_Init();
+	wurx_context_t wur_ctxt = {0};
+	/* STM32L0xx HAL library initialization:
+	   - Configure the Flash prefetch, Flash preread and Buffer caches
+	   - Systick timer is configured by default as source of time base, but user
+			 can eventually implement his proper time base source (a general purpose
+			 timer for example or other time source), keeping in mind that Time base
+			 duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
+			 handled in milliseconds basis.
+	   - Low Level Initialization
+	 */
+	HAL_Init();
 
-  /* Configure the system Power */
-  SystemPower_Config();
+	/* Configure the system Power */
+	SystemPower_Config();
 
-  pinModeinit();
-#ifdef USE_CMP
-  COMP_Config(&hcomp1);
-#endif
-
-  /* activate either button pin for wakeup or GPIO PORT_C PIN 8 */
-#ifdef BUTTON_DEBUG
-  BSP_PB_Init(BUTTON_KEY, BUTTON_MODE_EXTI);
-#endif
-
-  while (1)
-  {
-    /* Insert 5 second delay */
-    HAL_Delay(5000);
-    sleepMCU();
-    /* Key button (EXTI_Line13) will be used to wakeup the system from STOP mode */
-
-    /* Enter Stop Mode and disable tick for the duration */
-  }
+	pinModeinit();
+	#ifdef USE_CMP
+	COMP_Config(&hcomp1);
+	#endif
+	initWuRxContext(&wur_ctxt);
+	while (1)
+	{
+		WuRxStateMachine(&wur_ctxt);
+	}
 }
 
 

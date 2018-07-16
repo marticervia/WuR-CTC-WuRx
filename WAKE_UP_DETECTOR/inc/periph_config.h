@@ -5,12 +5,14 @@
  *      Author: marti
  */
 
-#ifndef COMP_CONFIG_H_
-#define COMP_CONFIG_H_
+#ifndef PERIPH_CONFIG_H_
+#define PERIPH_CONFIG_H_
 #include "main.h"
 
 void COMP_Config(COMP_HandleTypeDef* hcomp1);
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp);
+void pinModeSleep(void);
+void pinModeAwake(void);
+void pinModeinit(void);
 
-
-#endif /* COMP_CONFIG_H_ */
+#endif /* PERIPH_CONFIG_H_ */

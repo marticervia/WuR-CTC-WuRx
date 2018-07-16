@@ -6,6 +6,7 @@
  */
 #include "power_config.h"
 #include "config_defines.h"
+#include "user_handlers.h"
 #include "stm32l0xx_hal_conf.h"
 #include "string.h"
 /**
@@ -21,7 +22,6 @@
   */
 void SystemPower_Config(void)
 {
-  GPIO_InitTypeDef GPIO_InitStructure = {0};
 
 #ifndef USE_CMP
   /* Enable Ultra low power mode */
@@ -33,82 +33,8 @@ void SystemPower_Config(void)
 #endif
   /* Select HSI as system clock source after Wake Up from Stop mode */
   __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);
-
-  /* Enable GPIOs clock, PORTC is enabled when activating the button interrupt. */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-
-#ifdef BUTTON_DEBUG
-  /* start LED2 pin to show MCU state */
-  GPIO_InitStructure.Pin = (GPIO_PIN_5);
-  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStructure.Pull = GPIO_PULLUP;
-  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH  ;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-#else
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
-
-  GPIO_InitStructure.Pin = OUTPUT_PIN;
-  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_OD;
-  GPIO_InitStructure.Pull = GPIO_PULLUP;
-  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-  /* copnfigure PA2 as COMP2 output */
-  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
-
-  GPIO_InitStructure.Pin = COMP_OUTPUT;
-  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStructure.Pull = GPIO_NOPULL;
-  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStructure.Alternate = GPIO_AF7_COMP2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-#ifndef USE_CMP
-  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
-  GPIO_InitStructure.Pin = INTERRUPT_PIN;
-  GPIO_InitStructure.Mode   = GPIO_MODE_IT_FALLING;
-  GPIO_InitStructure.Pull = GPIO_PULLUP;
-  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-  /* Enable and set Button EXTI Interrupt to the lowest priority */
-  HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);
-  HAL_NVIC_EnableIRQ((IRQn_Type)(EXTI4_15_IRQn));
-
-#endif
-  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
-  /* Configure rest of GPIO port pins in Analog Input mode (floating input trigger OFF) */
-  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStructure.Pull = GPIO_NOPULL;
-  GPIO_InitStructure.Pin = GPIO_PIN_All;
-
-#ifdef BUTTON_DEBUG
-  /* DO NOT overwrite SWD pins when debugging, also, LED2. */
-  GPIO_InitStructure.Pin = GPIO_PIN_All & ~((uint32_t)(1<<13) | (uint32_t)(1<<14) | (uint32_t)(1<<5));
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_InitStructure.Pin = GPIO_PIN_All;
-#else
-  GPIO_InitStructure.Pin = GPIO_PIN_All & ~((uint32_t)(1<<13) | (uint32_t)(1<<14) | (uint32_t)(1<<12));
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_InitStructure.Pin = GPIO_PIN_All;
-#endif
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
-  HAL_GPIO_Init(GPIOH, &GPIO_InitStructure);
-  /* All port B in analog input is also OK for comparator mode */
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
-#endif
-  /* Disable unneeded GPIOs clock */
-  __HAL_RCC_GPIOB_CLK_DISABLE();
-  __HAL_RCC_GPIOD_CLK_DISABLE();
-  __HAL_RCC_GPIOH_CLK_DISABLE();
-#ifndef BUTTON_DEBUG
-  //__HAL_RCC_GPIOA_CLK_DISABLE();
-#endif
-
 }
+
 
 /**
   * @brief  Configures system clock after wake-up from STOP: enable HSI, PLL

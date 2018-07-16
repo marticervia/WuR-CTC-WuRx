@@ -35,13 +35,13 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include <periph_config.h>
 #include "main.h"
 #include <string.h>
 #include "stm32l0xx_hal_conf.h"
 #include "clock_config.h"
 #include "user_handlers.h"
 #include "config_defines.h"
-#include "comp_config.h"
 #include "power_config.h"
 
 volatile uint32_t intr_flag = 0;
@@ -64,6 +64,24 @@ volatile uint32_t intr_flag = 0;
 #ifdef USE_CMP
 	COMP_HandleTypeDef hcomp1;
 #endif
+
+
+
+static void sleepMCU(void){
+	pinModeSleep();
+    HAL_SuspendTick();
+    /* shut down indicator */
+    HAL_GPIO_WritePin(GPIOA, WAKE_UP_FAST, GPIO_PIN_RESET);
+    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+    /* restart indicator */
+	pinModeAwake();
+    HAL_GPIO_WritePin(GPIOA, WAKE_UP_FAST, GPIO_PIN_SET);
+    HAL_ResumeTick();
+    /* Configures system clock after wake-up from STOP*/
+    SystemClockConfig_STOP();
+}
+
+/* sets all pins to analog input, but SWD */
 
 /**
 * @brief  Main program
@@ -90,6 +108,7 @@ int main(void)
   /* Configure the system Power */
   SystemPower_Config();
 
+  pinModeinit();
 #ifdef USE_CMP
   COMP_Config(&hcomp1);
 #endif
@@ -103,39 +122,10 @@ int main(void)
   {
     /* Insert 5 second delay */
     HAL_Delay(5000);
-
+    sleepMCU();
     /* Key button (EXTI_Line13) will be used to wakeup the system from STOP mode */
 
     /* Enter Stop Mode and disable tick for the duration */
-    HAL_SuspendTick();
-    /* shut down indicator */
-#ifdef BUTTON_DEBUG
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-#else
-    HAL_GPIO_WritePin(GPIOC, OUTPUT_PIN, GPIO_PIN_RESET);
-#endif
-
-#ifndef BUSY_WAIT
-    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-#else
-#ifdef USE_CMP
-    // clear COMP2 intr line to not get bouncing
-    WRITE_REG(EXTI->PR, COMP_EXTI_LINE_COMP2);
-    intr_flag = 0;
-#endif
-    while(intr_flag == 0){}
-    intr_flag = 0;
-#endif
-    /* restart indicator */
-#ifdef BUTTON_DEBUG
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-#else
-    HAL_GPIO_WritePin(GPIOC, OUTPUT_PIN, GPIO_PIN_SET);
-#endif
-
-    HAL_ResumeTick();
-    /* Configures system clock after wake-up from STOP*/
-    SystemClockConfig_STOP();
   }
 }
 

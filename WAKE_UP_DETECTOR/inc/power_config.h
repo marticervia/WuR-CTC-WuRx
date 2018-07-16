@@ -28,6 +28,6 @@ void SystemPower_Config(void);
   * @param  None
   * @retval None
   */
-void SystemClockConfig_STOP(void);
+void SystemPower_ConfigSTOP(void);
 
 #endif /* POWER_CONFIG_H_ */

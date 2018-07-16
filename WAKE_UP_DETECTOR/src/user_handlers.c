@@ -20,7 +20,6 @@ void System_Error_Handler(void)
   */
 void HAL_SYSTICK_Callback(void)
 {
-  HAL_IncTick();
 }
 
 #ifdef  USE_FULL_ASSERT

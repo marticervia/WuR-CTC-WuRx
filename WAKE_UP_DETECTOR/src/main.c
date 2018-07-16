@@ -39,7 +39,6 @@
 #include "main.h"
 #include <string.h>
 #include "stm32l0xx_hal_conf.h"
-#include "clock_config.h"
 #include "user_handlers.h"
 #include "config_defines.h"
 #include "power_config.h"
@@ -68,17 +67,17 @@ volatile uint32_t intr_flag = 0;
 
 
 static void sleepMCU(void){
-	pinModeSleep();
-    HAL_SuspendTick();
     /* shut down indicator */
     HAL_GPIO_WritePin(GPIOA, WAKE_UP_FAST, GPIO_PIN_RESET);
+	pinModeSleep();
+    HAL_SuspendTick();
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+    HAL_ResumeTick();
     /* restart indicator */
 	pinModeAwake();
     HAL_GPIO_WritePin(GPIOA, WAKE_UP_FAST, GPIO_PIN_SET);
-    HAL_ResumeTick();
     /* Configures system clock after wake-up from STOP*/
-    SystemClockConfig_STOP();
+    SystemPower_ConfigSTOP();
 }
 
 /* sets all pins to analog input, but SWD */
@@ -100,10 +99,6 @@ int main(void)
        - Low Level Initialization
      */
   HAL_Init();
-
-
-  /* Configure the system clock @ 32 Mhz */
-  SystemClock_Config();
 
   /* Configure the system Power */
   SystemPower_Config();

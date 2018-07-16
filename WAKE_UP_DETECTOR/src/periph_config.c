@@ -34,7 +34,7 @@ void HAL_COMP_MspInit(COMP_HandleTypeDef* hcomp)
 
   GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStructure.Pull = GPIO_NOPULL;
-  GPIO_InitStructure.Pin = GPIO_PIN_All & ~((uint32_t)(1<<0) | (uint32_t)(1<<1));
+  GPIO_InitStructure.Pin = GPIO_PIN_0 | GPIO_PIN_1;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
   /*##-3- Configure the NVIC for COMP1 #######################################*/
@@ -123,9 +123,6 @@ void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
 
 void pinModeinit(void){
 	GPIO_InitTypeDef GPIO_InitStructure = {0};
-	  /* Select HSI as system clock source after Wake Up from Stop mode */
-	  __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);
-
 	  /* Enable GPIOs clock, PORTC is enabled when activating the button interrupt. */
 	  __HAL_RCC_GPIOA_CLK_ENABLE();
 	  __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -156,6 +153,17 @@ void pinModeinit(void){
 	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
 	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+	  /* configure fast input*/
+	  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
+	  GPIO_InitStructure.Pin = INPUT_FAST;
+	  GPIO_InitStructure.Mode   = GPIO_MODE_IT_RISING;
+	  GPIO_InitStructure.Pull = GPIO_PULLUP;
+	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+	  /* Enable and set Button EXTI Interrupt to the lowest priority */
+	  HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);
+
+
 	  /* set all the rest of pins to ANALOG NOPULL to save power.*/
 	  GPIO_InitStructure.Pin = GPIO_PIN_All;
 	  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
@@ -175,30 +183,13 @@ void pinModeinit(void){
 }
 
 void pinModeSleep(void){
-	GPIO_InitTypeDef GPIO_InitStructure = {0};
 	HAL_NVIC_DisableIRQ((IRQn_Type)(EXTI4_15_IRQn));
-	memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
-	GPIO_InitStructure.Pin = INPUT_FAST;
-	GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-	GPIO_InitStructure.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 	__HAL_RCC_GPIOA_CLK_DISABLE();
 
 }
 
 void pinModeAwake(void){
 
-	GPIO_InitTypeDef GPIO_InitStructure = {0};
-	  __HAL_RCC_GPIOA_CLK_ENABLE();
-
-	/* CONFIGURE inputs */
-	memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
-	GPIO_InitStructure.Pin = INPUT_FAST;
-	GPIO_InitStructure.Mode   = GPIO_MODE_IT_RISING;
-	GPIO_InitStructure.Pull = GPIO_PULLUP;
-	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-	/* Enable and set Button EXTI Interrupt to the lowest priority */
-	HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);
+    __HAL_RCC_GPIOA_CLK_ENABLE();
 	HAL_NVIC_EnableIRQ((IRQn_Type)(EXTI4_15_IRQn));
 }

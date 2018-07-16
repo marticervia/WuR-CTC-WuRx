@@ -41,6 +41,8 @@
 #include "clock_config.h"
 #include "user_handlers.h"
 #include "config_defines.h"
+#include "comp_config.h"
+#include "power_config.h"
 
 volatile uint32_t intr_flag = 0;
 

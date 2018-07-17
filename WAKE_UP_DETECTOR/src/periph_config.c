@@ -129,12 +129,13 @@ void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
   */
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
 {
+  __TIM2_CLK_ENABLE();
   /*##-2- Configure the NVIC for TIMx ########################################*/
   /* Set the TIMx priority */
-  HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
+  //HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
 
   /* Enable the TIMx global Interrupt */
-  HAL_NVIC_EnableIRQ(TIM2_IRQn);
+  //HAL_NVIC_EnableIRQ(TIM2_IRQn);
 }
 
 
@@ -201,12 +202,14 @@ void pinModeinit(void){
 
 void pinModeSleep(void){
 	HAL_NVIC_DisableIRQ((IRQn_Type)(EXTI4_15_IRQn));
+#ifdef ULP
 	__HAL_RCC_GPIOA_CLK_DISABLE();
-
+#endif
 }
 
 void pinModeAwake(void){
-
+#ifdef ULP
     __HAL_RCC_GPIOA_CLK_ENABLE();
+#endif
 	HAL_NVIC_EnableIRQ((IRQn_Type)(EXTI4_15_IRQn));
 }

@@ -60,7 +60,7 @@ void SystemPower_Config(void)
 	  System_Error_Handler();
 	}
 
-#ifdef USE_ULP
+#ifdef ULP
   /* Enable Ultra low power mode */
   HAL_PWREx_EnableUltraLowPower();
 

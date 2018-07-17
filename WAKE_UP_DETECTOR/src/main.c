@@ -111,41 +111,6 @@ static void initWuRxContext(wurx_context_t* context){
  *  if 16 MHz is not enough start using uglier but faster solutions
  */
 
-static void WuRxStateMachine(wurx_context_t* context){
-
-	switch(context->wurx_state){
-		case WURX_SLEEP:
-			/* this one blocks until MCU wakes*/
-			sleepMCU();
-			__TIM2_CLK_ENABLE();
-			/* wait 100 us for preamble init.*/
-			timeout_timer.Init.Period = 10000 - 1;
-			timeout_timer.Init.Prescaler = (uint32_t) ((SystemCoreClock / 10000) - 1);
-			timeout_timer.Init.ClockDivision = 0;
-			timeout_timer.Init.CounterMode = TIM_COUNTERMODE_UP;
-			HAL_TIM_Base_Init(&timeout_timer);
-			HAL_TIM_Base_Start_IT(&timeout_timer);
-			context->wurx_state = WURX_WAITING_PREAMBLE;
-			break;
-		case WURX_WAITING_PREAMBLE:
-			if(timer_timeout){
-				timer_timeout = 0;
-				HAL_TIM_Base_Stop_IT(&timeout_timer);
-				__TIM2_CLK_DISABLE();
-				context->wurx_state = WURX_SLEEP;
-			}
-			/* add logic to read the preamble */
-			break;
-		case WURX_DECODING_PREAMBLE:
-			break;
-		case WURX_DECODING_PAYLOAD:
-			break;
-		default:
-		initWuRxContext(context);
-		break;
-	}
-}
-
 
 /* sets all pins to analog input, but SWD */
 
@@ -178,7 +143,40 @@ int main(void)
 	initWuRxContext(&wur_ctxt);
 	while (1)
 	{
-		WuRxStateMachine(&wur_ctxt);
+	    HAL_GPIO_WritePin(GPIOA, ADDR_OK, GPIO_PIN_SET);
+		switch(wur_ctxt.wurx_state){
+			case WURX_SLEEP:
+				/* this one blocks until MCU wakes*/
+				sleepMCU();
+				__TIM2_CLK_ENABLE();
+				/* wait 100 us for preamble init.*/
+				timeout_timer.Instance = TIM2;
+				timeout_timer.Init.Period = 1600 - 1;
+				timeout_timer.Init.Prescaler = (uint32_t) 0;
+				timeout_timer.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+				timeout_timer.Init.CounterMode = TIM_COUNTERMODE_UP;
+				HAL_TIM_Base_Init(&timeout_timer);
+				HAL_TIM_Base_Start_IT(&timeout_timer);
+				wur_ctxt.wurx_state = WURX_WAITING_PREAMBLE;
+				break;
+			case WURX_WAITING_PREAMBLE:
+				if(timer_timeout){
+					timer_timeout = 0;
+					HAL_TIM_Base_Stop_IT(&timeout_timer);
+					__TIM2_CLK_DISABLE();
+					wur_ctxt.wurx_state = WURX_SLEEP;
+				}
+				/* add logic to read the preamble */
+				break;
+			case WURX_DECODING_PREAMBLE:
+				break;
+			case WURX_DECODING_PAYLOAD:
+				break;
+			default:
+			initWuRxContext(&wur_ctxt);
+			break;
+		}
+	    HAL_GPIO_WritePin(GPIOA, ADDR_OK, GPIO_PIN_RESET);
 	}
 }
 

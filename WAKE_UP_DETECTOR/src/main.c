@@ -43,6 +43,9 @@
 #include "config_defines.h"
 #include "power_config.h"
 
+#define PIN_SET(GPIOx, GPIO_Pin)  (GPIOx->BSRR = GPIO_Pin)
+#define PIN_RESET(GPIOx, GPIO_Pin)  (GPIOx->BRR = GPIO_Pin)
+
 COMP_HandleTypeDef hcomp1;
 TIM_HandleTypeDef  timeout_timer;
 
@@ -79,14 +82,14 @@ static volatile uint32_t timer_timeout = 0;
 
 static void sleepMCU(void){
     /* shut down indicator */
-    HAL_GPIO_WritePin(GPIOA, WAKE_UP_FAST, GPIO_PIN_RESET);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	pinModeSleep();
     HAL_SuspendTick();
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
     HAL_ResumeTick();
     /* restart indicator */
 	pinModeAwake();
-    HAL_GPIO_WritePin(GPIOA, WAKE_UP_FAST, GPIO_PIN_SET);
+    PIN_SET(GPIOA, WAKE_UP_FAST);
     /* Configures system clock after wake-up from STOP*/
     SystemPower_ConfigSTOP();
 }
@@ -143,7 +146,7 @@ int main(void)
 	initWuRxContext(&wur_ctxt);
 	while (1)
 	{
-	    HAL_GPIO_WritePin(GPIOA, ADDR_OK, GPIO_PIN_SET);
+		PIN_SET(GPIOA, ADDR_OK);
 		switch(wur_ctxt.wurx_state){
 			case WURX_SLEEP:
 				/* this one blocks until MCU wakes*/
@@ -176,7 +179,7 @@ int main(void)
 			initWuRxContext(&wur_ctxt);
 			break;
 		}
-	    HAL_GPIO_WritePin(GPIOA, ADDR_OK, GPIO_PIN_RESET);
+		PIN_RESET(GPIOA, ADDR_OK);
 	}
 }
 

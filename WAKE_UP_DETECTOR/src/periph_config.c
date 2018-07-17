@@ -160,14 +160,14 @@ void pinModeinit(void){
 	  GPIO_InitStructure.Pin = WAKE_UP_FAST;
 	  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
 	  GPIO_InitStructure.Pull = GPIO_PULLDOWN;
-	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
+	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
 	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 	  GPIO_InitStructure.Pin = ADDR_OK;
 	  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
 	  GPIO_InitStructure.Pull = GPIO_PULLDOWN;
-	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
+	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
 	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	  /* configure fast input*/

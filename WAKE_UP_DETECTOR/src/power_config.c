@@ -118,12 +118,12 @@ void SystemPower_ConfigSTOP(void)
 	  System_Error_Handler();
   }
 
-  /*
+
 #ifdef USE_ULP
   HAL_PWREx_EnableUltraLowPower();
   HAL_PWREx_EnableFastWakeUp();
 #endif
-*/
+
   /* Select HSI as system clock source after Wake Up from Stop mode */
   __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);
 

@@ -137,7 +137,7 @@ void                      SD_IO_WriteReadData(const uint8_t *DataIn, uint8_t *Da
 void                      SD_IO_ReadData(uint8_t *DataOut, uint16_t DataLength);
 void                      SD_IO_WriteData(const uint8_t *Data, uint16_t DataLength);
 uint8_t                   SD_IO_WriteByte(uint8_t Data);
-uint8_t                   SD_IO_ReadByte(void);
+//uint8_t                   SD_IO_ReadByte(void);
 
 /* LCD IO functions */
 void                      LCD_IO_Init(void);

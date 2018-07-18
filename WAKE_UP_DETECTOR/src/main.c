@@ -157,8 +157,9 @@ int main(void)
 				wur_ctxt.wurx_state = WURX_WAITING_PREAMBLE;
 				break;
 			case WURX_WAITING_PREAMBLE:
-				if(timer_timeout >= 1){
+				if(IS_TIMER_EXPIRED(TIM2)){
 					TIMER_DISABLE(TIM2);
+					CLEAR_TIMER_EXPIRED(TIM2);
 					__TIM2_CLK_DISABLE();
 					wur_ctxt.wurx_state = WURX_SLEEP;
 				}

@@ -18,12 +18,10 @@
 /*timers, works with all CC1 timers: TIM2, TIM21 and TIM22*/
 #define TIMER_ENABLE(TIMx) 											\
 							do{										\
-								TIMx->DIER |= TIM_IT_UPDATE;		\
 								TIMx->CR1 |= TIM_CR1_CEN;			\
 							}while(0)
 #define TIMER_DISABLE(TIMx) 										\
 							do{										\
-								TIMx->DIER &= ~(TIM_IT_UPDATE);		\
 								TIMx->CR1 &= ~(TIM_CR1_CEN);		\
 							}while(0)
 #define TIMER_SET_COUNTING_MODE(TIMx, mode)							\
@@ -40,6 +38,8 @@
 #define TIMER_SET_PERIOD(TIMx, period) (TIMx->ARR = (uint32_t)period)
 #define TIMER_SET_PRESCALER(TIMx, prescaler) (TIMx->PSC = (uint32_t)prescaler)
 #define TIMER_COMMIT_UPDATE(TIMx) (TIMx->EGR = TIM_EGR_UG)
+#define IS_TIMER_EXPIRED(TIMx) ((TIMx->SR &(TIM_FLAG_UPDATE)) == (TIM_FLAG_UPDATE))
+#define CLEAR_TIMER_EXPIRED(TIMx) (TIMx->SR &= ~(TIM_FLAG_UPDATE))
 
 void COMP_Config(COMP_HandleTypeDef* hcomp1);
 void TIMER_Config(TIM_TypeDef* TIMx);

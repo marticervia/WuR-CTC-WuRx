@@ -201,8 +201,8 @@ void pinModeinit(void){
 }
 
 void pinModeSleep(void){
-	HAL_NVIC_DisableIRQ((IRQn_Type)(EXTI4_15_IRQn));
 #ifdef ULP
+	HAL_NVIC_DisableIRQ((IRQn_Type)(EXTI4_15_IRQn));
 	__HAL_RCC_GPIOA_CLK_DISABLE();
 #endif
 }
@@ -210,6 +210,6 @@ void pinModeSleep(void){
 void pinModeAwake(void){
 #ifdef ULP
     __HAL_RCC_GPIOA_CLK_ENABLE();
-#endif
 	HAL_NVIC_EnableIRQ((IRQn_Type)(EXTI4_15_IRQn));
+#endif
 }

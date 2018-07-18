@@ -138,6 +138,16 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
   HAL_NVIC_EnableIRQ(TIM2_IRQn);
 }
 
+void TIMER_Config(TIM_TypeDef* TIMx){
+    HAL_TIM_Base_MspInit(NULL);
+	TIMER_SET_COUNTING_MODE(TIMx, TIM_COUNTERMODE_UP);
+	TIMER_SET_CLOCK_DIVISOR(TIMx, TIM_CLOCKDIVISION_DIV1);
+	TIMER_SET_PERIOD(TIMx, 799);
+	TIMER_SET_PRESCALER(TIMx, 0);
+	TIMER_COMMIT_UPDATE(TIMx);
+}
+
+
 
 void pinModeinit(void){
 	GPIO_InitTypeDef GPIO_InitStructure = {0};

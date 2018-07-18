@@ -137,6 +137,18 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
   HAL_NVIC_EnableIRQ(TIM2_IRQn);
 }
 
+void TIMER_Config(TIM_TypeDef* TIMx){
+	__TIM2_CLK_ENABLE();
+    HAL_TIM_Base_MspInit(NULL);
+	TIMER_SET_COUNTING_MODE(TIMx, TIM_COUNTERMODE_UP);
+	TIMER_SET_CLOCK_DIVISOR(TIMx, TIM_CLOCKDIVISION_DIV1);
+	TIMER_SET_PERIOD(TIMx, 1599);
+	TIMER_SET_PRESCALER(TIMx, 0);
+	TIMER_COMMIT_UPDATE(TIMx);
+	__TIM2_CLK_DISABLE();
+
+}
+
 
 void pinModeinit(void){
 	GPIO_InitTypeDef GPIO_InitStructure = {0};
@@ -206,7 +218,6 @@ void pinModeSleep(void){
 }
 
 void pinModeAwake(void){
-
     __HAL_RCC_GPIOA_CLK_ENABLE();
 	HAL_NVIC_EnableIRQ((IRQn_Type)(EXTI4_15_IRQn));
 }

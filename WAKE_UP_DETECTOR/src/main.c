@@ -91,13 +91,13 @@ static void sleepMCU(void){
 	pinModeAwake();
     PIN_SET(GPIOA, WAKE_UP_FAST);
     /* Configures system clock after wake-up from STOP*/
-    SystemPower_ConfigSTOP();
+    //SystemPower_ConfigSTOP();
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* Set timeout flag */
-	timer_timeout = 1;
+	timer_timeout++;
 }
 
 
@@ -140,9 +140,8 @@ int main(void)
 	SystemPower_Config();
 
 	pinModeinit();
-	#ifdef USE_CMP
+	TIMER_Config(TIM2);
 	COMP_Config(&hcomp1);
-	#endif
 	initWuRxContext(&wur_ctxt);
 	while (1)
 	{
@@ -153,19 +152,13 @@ int main(void)
 				sleepMCU();
 				__TIM2_CLK_ENABLE();
 				/* wait 100 us for preamble init.*/
-				timeout_timer.Instance = TIM2;
-				timeout_timer.Init.Period = 1600 - 1;
-				timeout_timer.Init.Prescaler = (uint32_t) 0;
-				timeout_timer.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-				timeout_timer.Init.CounterMode = TIM_COUNTERMODE_UP;
-				HAL_TIM_Base_Init(&timeout_timer);
-				HAL_TIM_Base_Start_IT(&timeout_timer);
+				timer_timeout = 0;
+				TIMER_ENABLE(TIM2);
 				wur_ctxt.wurx_state = WURX_WAITING_PREAMBLE;
 				break;
 			case WURX_WAITING_PREAMBLE:
-				if(timer_timeout){
-					timer_timeout = 0;
-					HAL_TIM_Base_Stop_IT(&timeout_timer);
+				if(timer_timeout >= 1){
+					TIMER_DISABLE(TIM2);
 					__TIM2_CLK_DISABLE();
 					wur_ctxt.wurx_state = WURX_SLEEP;
 				}

@@ -110,11 +110,16 @@ static void initWuRxContext(wurx_context_t* context){
 	timeout_timer.Instance = TIM2;
 }
 
-/* For now let's use the SLOW solution of struct + switch
- *  if 16 MHz is not enough start using uglier but faster solutions
- */
-
-
+static void goToSleep(wurx_context_t* wur_ctxt){
+	TIMER_DISABLE(TIM2);
+	CLEAR_TIMER_EXPIRED(TIM2);
+	__TIM2_CLK_DISABLE();
+	wur_ctxt->wurx_state = WURX_SLEEP;
+}
+static inline uint32_t readBit(void){
+	uint32_t result = 0;
+	return result;
+}
 /* sets all pins to analog input, but SWD */
 
 /**
@@ -140,7 +145,7 @@ int main(void)
 	SystemPower_Config();
 
 	pinModeinit();
-	TIMER_Config(TIM2);
+	TIMER_Config();
 	COMP_Config(&hcomp1);
 	initWuRxContext(&wur_ctxt);
 	while (1)
@@ -164,7 +169,6 @@ int main(void)
 				/* finish waiting for preamble start */
 				if(IS_TIMER_EXPIRED(TIM2)){
 					TIMER_DISABLE(TIM2);
-					CLEAR_TIMER_EXPIRED(TIM2);
 					TIMER_SET_PERIOD(TIM2, 1599);
 					TIMER_COMMIT_UPDATE(TIM2);
 					CLEAR_TIMER_EXPIRED(TIM2);
@@ -178,29 +182,42 @@ int main(void)
 				while(1){
 					/* if header decoding timeout occurs, goto sleep*/
 					if(IS_TIMER_EXPIRED(TIM2)){
-						TIMER_DISABLE(TIM2);
-						CLEAR_TIMER_EXPIRED(TIM2);
-						__TIM2_CLK_DISABLE();
-						wur_ctxt.wurx_state = WURX_SLEEP;
+						goToSleep(&wur_ctxt);
 						break;
 					}
 					/* preamble decode state machine*/
 					switch(decode_preamble_state){
-						/*wait for first low level*/
+						/*wait for first 1 */
 						case 0:
-								break;
-						/*wait for first high level*/
+							if(!readBit())
+								goToSleep(&wur_ctxt);
+							else
+								decode_preamble_state++;
+							break;
+						/*wait for first 0*/
 						case 1:
-								break;
-						/*wait for second low level*/
+							if(readBit())
+								goToSleep(&wur_ctxt);
+							else
+								decode_preamble_state++;
+							break;
+						/*wait for second 1*/
 						case 2:
-								break;
-						/*wait for second high level and, if found, goto frame decoding*/
+							if(!readBit())
+								goToSleep(&wur_ctxt);
+							else
+								decode_preamble_state++;
+							break;
+						/*wait for second 0 and, if found, goto frame decoding*/
 						case 3:
+							if(readBit())
+								goToSleep(&wur_ctxt);
+							else
 								TIMER_DISABLE(TIM2);
 								CLEAR_TIMER_EXPIRED(TIM2);
 								wur_ctxt.wurx_state = WURX_DECODING_PAYLOAD;
 								break;
+							break;
 						default:
 							TIMER_DISABLE(TIM2);
 							CLEAR_TIMER_EXPIRED(TIM2);
@@ -210,8 +227,15 @@ int main(void)
 				break;
 			}
 
-			case WURX_DECODING_PAYLOAD:
+			case WURX_DECODING_PAYLOAD:{
+				uint8_t i;
+				for(i = 0; i < 16; i++){
+					readBit();
+				}
+				goToSleep(&wur_ctxt);
 				break;
+			}
+
 			default:
 			initWuRxContext(&wur_ctxt);
 			break;

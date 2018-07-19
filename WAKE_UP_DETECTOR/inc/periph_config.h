@@ -43,7 +43,7 @@
 #define CLEAR_TIMER_EXPIRED(TIMx) (TIMx->SR &= ~(TIM_FLAG_UPDATE))
 
 void COMP_Config(COMP_HandleTypeDef* hcomp1);
-void TIMER_Config(TIM_TypeDef* TIMx);
+void TIMER_Config();
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp);
 void pinModeSleep(void);
 void pinModeAwake(void);

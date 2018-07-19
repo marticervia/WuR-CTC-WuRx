@@ -151,22 +151,65 @@ int main(void)
 				/* this one blocks until MCU wakes*/
 				sleepMCU();
 				__TIM2_CLK_ENABLE();
+				CLEAR_TIMER_EXPIRED(TIM2);
 				/* wait 100 us for preamble init.*/
-				timer_timeout = 0;
+				TIMER_SET_PERIOD(TIM2, 799);
+				TIMER_COMMIT_UPDATE(TIM2);
+				CLEAR_TIMER_EXPIRED(TIM2);
 				TIMER_ENABLE(TIM2);
+
 				wur_ctxt.wurx_state = WURX_WAITING_PREAMBLE;
 				break;
 			case WURX_WAITING_PREAMBLE:
+				/* finish waiting for preamble start */
 				if(IS_TIMER_EXPIRED(TIM2)){
 					TIMER_DISABLE(TIM2);
 					CLEAR_TIMER_EXPIRED(TIM2);
-					__TIM2_CLK_DISABLE();
-					wur_ctxt.wurx_state = WURX_SLEEP;
+					TIMER_SET_PERIOD(TIM2, 1599);
+					TIMER_COMMIT_UPDATE(TIM2);
+					CLEAR_TIMER_EXPIRED(TIM2);
+					TIMER_ENABLE(TIM2);
+					wur_ctxt.wurx_state = WURX_DECODING_PREAMBLE;
 				}
-				/* add logic to read the preamble */
 				break;
-			case WURX_DECODING_PREAMBLE:
+			case WURX_DECODING_PREAMBLE:{
+				/* start decoding preamble*/
+				uint32_t decode_preamble_state = 0;
+				while(1){
+					/* if header decoding timeout occurs, goto sleep*/
+					if(IS_TIMER_EXPIRED(TIM2)){
+						TIMER_DISABLE(TIM2);
+						CLEAR_TIMER_EXPIRED(TIM2);
+						__TIM2_CLK_DISABLE();
+						wur_ctxt.wurx_state = WURX_SLEEP;
+						break;
+					}
+					/* preamble decode state machine*/
+					switch(decode_preamble_state){
+						/*wait for first low level*/
+						case 0:
+								break;
+						/*wait for first high level*/
+						case 1:
+								break;
+						/*wait for second low level*/
+						case 2:
+								break;
+						/*wait for second high level and, if found, goto frame decoding*/
+						case 3:
+								TIMER_DISABLE(TIM2);
+								CLEAR_TIMER_EXPIRED(TIM2);
+								wur_ctxt.wurx_state = WURX_DECODING_PAYLOAD;
+								break;
+						default:
+							TIMER_DISABLE(TIM2);
+							CLEAR_TIMER_EXPIRED(TIM2);
+							wur_ctxt.wurx_state = WURX_SLEEP;
+					}
+				}
 				break;
+			}
+
 			case WURX_DECODING_PAYLOAD:
 				break;
 			default:

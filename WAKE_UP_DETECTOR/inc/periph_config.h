@@ -8,8 +8,9 @@
 #ifndef PERIPH_CONFIG_H_
 #define PERIPH_CONFIG_H_
 #include "main.h"
+
 /* HAL layer uses asserts and multiple function calls, it is SLOW.*/
-/* macros at registry level to skimp cycles. */
+/* Use macros at registry level to skimp cycles. */
 
 /*pins*/
 #define PIN_SET(GPIOx, GPIO_Pin)  (GPIOx->BSRR = GPIO_Pin)

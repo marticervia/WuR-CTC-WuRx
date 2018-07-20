@@ -15,7 +15,8 @@
 /*pins*/
 #define PIN_SET(GPIOx, GPIO_Pin)  (GPIOx->BSRR = GPIO_Pin)
 #define PIN_RESET(GPIOx, GPIO_Pin)  (GPIOx->BRR = GPIO_Pin)
-
+/* returns 0 when not set, > 0 when set*/
+#define READ_PIN(GPIOx, GPIO_Pin)   (GPIOx->IDR & GPIO_Pin)
 /*timers, works with all CC1 timers: TIM2, TIM21 and TIM22*/
 #define TIMER_ENABLE(TIMx) 											\
 							do{										\

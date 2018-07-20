@@ -127,19 +127,9 @@ void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
   * @param htim: TIM handle pointer
   * @retval None
   */
-void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
-{
-  /*##-2- Configure the NVIC for TIMx ########################################*/
-  /* Set the TIMx priority */
-  //HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
-
-  /* Enable the TIMx global Interrupt */
-  //HAL_NVIC_EnableIRQ(TIM2_IRQn);
-}
 
 void TIMER_Config(){
 	__TIM2_CLK_ENABLE();
-    HAL_TIM_Base_MspInit(NULL);
 	TIMER_SET_COUNTING_MODE(TIM2, TIM_COUNTERMODE_UP);
 	TIMER_SET_CLOCK_DIVISOR(TIM2, TIM_CLOCKDIVISION_DIV1);
 	TIMER_SET_PERIOD(TIM2, 1599);
@@ -148,7 +138,6 @@ void TIMER_Config(){
 	__TIM2_CLK_DISABLE();
 
 	__TIM21_CLK_ENABLE();
-    HAL_TIM_Base_MspInit(NULL);
 	TIMER_SET_COUNTING_MODE(TIM21, TIM_COUNTERMODE_UP);
 	TIMER_SET_CLOCK_DIVISOR(TIM21, TIM_CLOCKDIVISION_DIV1);
 	TIMER_SET_PERIOD(TIM21, 63);
@@ -196,12 +185,12 @@ void pinModeinit(void){
 	  /* configure fast input*/
 	  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 	  GPIO_InitStructure.Pin = INPUT_FAST;
-	  GPIO_InitStructure.Mode   = GPIO_MODE_IT_RISING;
-	  GPIO_InitStructure.Pull = GPIO_PULLUP;
+	  GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
+	  GPIO_InitStructure.Pull = GPIO_NOPULL;
 	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
-	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+	  //HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 	  /* Enable and set Button EXTI Interrupt to the lowest priority */
-	  HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);
+	  //HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);
 
 
 	  /* set all the rest of pins to ANALOG NOPULL to save power.*/

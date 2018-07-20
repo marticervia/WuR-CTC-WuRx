@@ -43,9 +43,6 @@
 #include "config_defines.h"
 #include "power_config.h"
 
-#define PIN_SET(GPIOx, GPIO_Pin)  (GPIOx->BSRR = GPIO_Pin)
-#define PIN_RESET(GPIOx, GPIO_Pin)  (GPIOx->BRR = GPIO_Pin)
-
 COMP_HandleTypeDef hcomp1;
 TIM_HandleTypeDef  timeout_timer;
 
@@ -91,7 +88,7 @@ static void sleepMCU(void){
 	pinModeAwake();
     PIN_SET(GPIOA, WAKE_UP_FAST);
     /* Configures system clock after wake-up from STOP*/
-    //SystemPower_ConfigSTOP();
+    SystemPower_ConfigSTOP();
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -113,12 +110,23 @@ static void initWuRxContext(wurx_context_t* context){
 static void goToSleep(wurx_context_t* wur_ctxt){
 	TIMER_DISABLE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
+	TIMER_DISABLE(TIM21);
+	CLEAR_TIMER_EXPIRED(TIM21);
 	__TIM2_CLK_DISABLE();
+	__TIM21_CLK_DISABLE();
 	wur_ctxt->wurx_state = WURX_SLEEP;
 }
+
+
 static inline uint32_t readBit(void){
-	uint32_t result = 0;
+	uint32_t result;
+	while(!IS_TIMER_EXPIRED(TIM21));
+	CLEAR_TIMER_EXPIRED(TIM21);
+	PIN_SET(GPIOA, ADDR_OK);
+	result = READ_PIN(GPIOA, INPUT_FAST);
+	PIN_RESET(GPIOA, ADDR_OK);
 	return result;
+
 }
 /* sets all pins to analog input, but SWD */
 
@@ -150,7 +158,6 @@ int main(void)
 	initWuRxContext(&wur_ctxt);
 	while (1)
 	{
-		PIN_SET(GPIOA, ADDR_OK);
 		switch(wur_ctxt.wurx_state){
 			case WURX_SLEEP:
 				/* this one blocks until MCU wakes*/
@@ -179,44 +186,63 @@ int main(void)
 			case WURX_DECODING_PREAMBLE:{
 				/* start decoding preamble*/
 				uint32_t decode_preamble_state = 0;
+				uint32_t finished = 0;
 				while(1){
 					/* if header decoding timeout occurs, goto sleep*/
 					if(IS_TIMER_EXPIRED(TIM2)){
-						goToSleep(&wur_ctxt);
+						//goToSleep(&wur_ctxt);
+						//break;
+					}else if(finished){
+						TIMER_DISABLE(TIM2);
+						CLEAR_TIMER_EXPIRED(TIM2);
+						wur_ctxt.wurx_state = WURX_DECODING_PAYLOAD;
+						PIN_RESET(GPIOA, ADDR_OK);
 						break;
 					}
+
 					/* preamble decode state machine*/
 					switch(decode_preamble_state){
-						/*wait for first 1 */
 						case 0:
+							/*wait for first 1 */
+							PIN_RESET(GPIOA, ADDR_OK);
+							PIN_SET(GPIOA, ADDR_OK);
+							__TIM21_CLK_ENABLE();
+							CLEAR_TIMER_EXPIRED(TIM21);
+							TIMER_ENABLE(TIM21);
+							PIN_RESET(GPIOA, ADDR_OK);
+						    HAL_SuspendTick();
 							if(!readBit())
-								goToSleep(&wur_ctxt);
+								decode_preamble_state++;
+								//goToSleep(&wur_ctxt);
 							else
 								decode_preamble_state++;
 							break;
 						/*wait for first 0*/
 						case 1:
 							if(readBit())
-								goToSleep(&wur_ctxt);
+								decode_preamble_state++;
+								//goToSleep(&wur_ctxt);
 							else
 								decode_preamble_state++;
 							break;
 						/*wait for second 1*/
 						case 2:
 							if(!readBit())
-								goToSleep(&wur_ctxt);
+								decode_preamble_state++;
+								//goToSleep(&wur_ctxt);
 							else
 								decode_preamble_state++;
 							break;
 						/*wait for second 0 and, if found, goto frame decoding*/
 						case 3:
-							if(readBit())
-								goToSleep(&wur_ctxt);
-							else
-								TIMER_DISABLE(TIM2);
-								CLEAR_TIMER_EXPIRED(TIM2);
-								wur_ctxt.wurx_state = WURX_DECODING_PAYLOAD;
-								break;
+							if(!readBit()){
+								finished = 1;
+								decode_preamble_state++;
+								//goToSleep(&wur_ctxt);
+							}
+							else{
+								finished = 1;
+							}
 							break;
 						default:
 							TIMER_DISABLE(TIM2);

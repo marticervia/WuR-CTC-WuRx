@@ -117,7 +117,7 @@ static void goToSleep(wurx_context_t* wur_ctxt){
 	wur_ctxt->wurx_state = WURX_SLEEP;
 }
 
-
+/* potato */
 static inline uint32_t readBit(void){
 	uint32_t result;
 	while(!IS_TIMER_EXPIRED(TIM21));

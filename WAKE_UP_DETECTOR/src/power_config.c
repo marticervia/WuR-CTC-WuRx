@@ -42,7 +42,7 @@ void SystemPower_Config(void)
 	RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL4;
 	RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV2;
 	/* Used in all examples, maybe its the most common trim.*/
-	RCC_OscInitStruct.HSICalibrationValue = 0x10;
+	RCC_OscInitStruct.HSICalibrationValue = 0x0;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	  System_Error_Handler();
@@ -97,7 +97,7 @@ void SystemPower_ConfigSTOP(void)
 	RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
 	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
-	RCC_OscInitStruct.HSICalibrationValue = 0x10;
+	RCC_OscInitStruct.HSICalibrationValue = 0x0;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	  System_Error_Handler();

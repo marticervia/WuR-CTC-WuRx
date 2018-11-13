@@ -179,85 +179,59 @@ int main(void)
 					TIMER_SET_PERIOD(TIM2, 1599);
 					TIMER_COMMIT_UPDATE(TIM2);
 					CLEAR_TIMER_EXPIRED(TIM2);
-					TIMER_ENABLE(TIM2);
 					wur_ctxt.wurx_state = WURX_DECODING_PREAMBLE;
 				}
 				break;
 			case WURX_DECODING_PREAMBLE:{
 				/* start decoding preamble*/
-				uint32_t decode_preamble_state = 0;
-				uint32_t finished = 0;
-				while(1){
-					/* if header decoding timeout occurs, goto sleep*/
-					if(IS_TIMER_EXPIRED(TIM2)){
-						//goToSleep(&wur_ctxt);
-						//break;
-					}else if(finished){
-						TIMER_DISABLE(TIM2);
-						CLEAR_TIMER_EXPIRED(TIM2);
-						wur_ctxt.wurx_state = WURX_DECODING_PAYLOAD;
-						PIN_RESET(GPIOA, ADDR_OK);
-						break;
-					}
+				/*wait for first 1 */
+				PIN_RESET(GPIOA, ADDR_OK);
+				PIN_SET(GPIOA, ADDR_OK);
+				__TIM21_CLK_ENABLE();
+				CLEAR_TIMER_EXPIRED(TIM21);
+				TIMER_ENABLE(TIM21);
+				PIN_RESET(GPIOA, ADDR_OK);
+				HAL_SuspendTick();
+				/* read 4 bits */
+				if(!readBit())
+					//goToSleep(&wur_ctxt);
+				if(readBit())
+					//goToSleep(&wur_ctxt);
+				if(!readBit())
+					//goToSleep(&wur_ctxt);
+				if(!readBit())
+					//goToSleep(&wur_ctxt);
 
-					/* preamble decode state machine*/
-					switch(decode_preamble_state){
-						case 0:
-							/*wait for first 1 */
-							PIN_RESET(GPIOA, ADDR_OK);
-							PIN_SET(GPIOA, ADDR_OK);
-							__TIM21_CLK_ENABLE();
-							CLEAR_TIMER_EXPIRED(TIM21);
-							TIMER_ENABLE(TIM21);
-							PIN_RESET(GPIOA, ADDR_OK);
-						    HAL_SuspendTick();
-							if(!readBit())
-								decode_preamble_state++;
-								//goToSleep(&wur_ctxt);
-							else
-								decode_preamble_state++;
-							break;
-						/*wait for first 0*/
-						case 1:
-							if(readBit())
-								decode_preamble_state++;
-								//goToSleep(&wur_ctxt);
-							else
-								decode_preamble_state++;
-							break;
-						/*wait for second 1*/
-						case 2:
-							if(!readBit())
-								decode_preamble_state++;
-								//goToSleep(&wur_ctxt);
-							else
-								decode_preamble_state++;
-							break;
-						/*wait for second 0 and, if found, goto frame decoding*/
-						case 3:
-							if(!readBit()){
-								finished = 1;
-								decode_preamble_state++;
-								//goToSleep(&wur_ctxt);
-							}
-							else{
-								finished = 1;
-							}
-							break;
-						default:
-							TIMER_DISABLE(TIM2);
-							CLEAR_TIMER_EXPIRED(TIM2);
-							wur_ctxt.wurx_state = WURX_SLEEP;
-					}
-				}
+				PIN_SET(GPIOA, ADDR_OK);
+				TIMER_DISABLE(TIM2);
+				TIMER_SET_PERIOD(TIM2, 1599);
+				TIMER_COMMIT_UPDATE(TIM2);
+				CLEAR_TIMER_EXPIRED(TIM2);
+				TIMER_ENABLE(TIM2);
+				wur_ctxt.wurx_state = WURX_DECODING_PAYLOAD;
 				break;
 			}
-
 			case WURX_DECODING_PAYLOAD:{
-				uint8_t i;
-				for(i = 0; i < 16; i++){
-					readBit();
-				}
+				readBit();
+				readBit();
+				readBit();
+				readBit();
+
+				readBit();
+				readBit();
+				readBit();
+				readBit();
+
+				readBit();
+				readBit();
+				readBit();
+				readBit();
+
+				readBit();
+				readBit();
+				readBit();
+				readBit();
+
 				goToSleep(&wur_ctxt);
 				break;
 			}

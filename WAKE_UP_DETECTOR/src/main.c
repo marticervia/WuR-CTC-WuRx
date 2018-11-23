@@ -83,7 +83,7 @@ static void sleepMCU(void){
 	pinModeSleep();
     HAL_SuspendTick();
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-    HAL_ResumeTick();
+    //HAL_ResumeTick();
     /* restart indicator */
 	pinModeAwake();
     PIN_SET(GPIOA, WAKE_UP_FAST);
@@ -165,10 +165,11 @@ int main(void)
 			case WURX_SLEEP:
 				/* this one blocks until MCU wakes*/
 				sleepMCU();
+				PIN_SET(GPIOA, ADDR_OK);
 				__TIM2_CLK_ENABLE();
 				CLEAR_TIMER_EXPIRED(TIM2);
 				/* wait 100 us for preamble init.*/
-				TIMER_SET_PERIOD(TIM2, 799);
+				TIMER_SET_PERIOD(TIM2, 199);
 				TIMER_COMMIT_UPDATE(TIM2);
 				CLEAR_TIMER_EXPIRED(TIM2);
 				TIMER_ENABLE(TIM2);
@@ -178,6 +179,7 @@ int main(void)
 			case WURX_WAITING_PREAMBLE:
 				/* finish waiting for preamble start */
 				if(IS_TIMER_EXPIRED(TIM2)){
+					PIN_RESET(GPIOA, ADDR_OK);
 					TIMER_DISABLE(TIM2);
 					TIMER_SET_PERIOD(TIM2, 1599);
 					TIMER_COMMIT_UPDATE(TIM2);
@@ -194,7 +196,7 @@ int main(void)
 				CLEAR_TIMER_EXPIRED(TIM21);
 				TIMER_ENABLE(TIM21);
 				PIN_RESET(GPIOA, ADDR_OK);
-				HAL_SuspendTick();
+				//HAL_SuspendTick();
 				/* read 4 bits */
 				if(!readBit())
 					//goToSleep(&wur_ctxt);

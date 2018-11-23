@@ -120,11 +120,14 @@ static void goToSleep(wurx_context_t* wur_ctxt){
 /* potato */
 static inline uint32_t readBit(void){
 	uint32_t result;
+
 	while(!IS_TIMER_EXPIRED(TIM21));
+
 	CLEAR_TIMER_EXPIRED(TIM21);
 	PIN_SET(GPIOA, ADDR_OK);
 	result = READ_PIN(GPIOA, INPUT_FAST);
 	PIN_RESET(GPIOA, ADDR_OK);
+
 	return result;
 
 }

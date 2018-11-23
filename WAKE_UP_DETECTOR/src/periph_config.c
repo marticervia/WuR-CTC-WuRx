@@ -192,7 +192,7 @@ void pinModeinit(void){
 	  /* Enable and set Button EXTI Interrupt to the lowest priority */
 	  //HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);
 
-
+	  //memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 	  /* set all the rest of pins to ANALOG NOPULL to save power.*/
 	  GPIO_InitStructure.Pin = GPIO_PIN_All;
 	  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;

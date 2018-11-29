@@ -14,12 +14,12 @@
 #define USE_ULP
 
 
-#define COMP_NON_INVERTING GPIO_PIN_3
-#define COMP_INVERTING GPIO_PIN_4
-#define COMP_OUTPUT GPIO_PIN_11
-#define WAKE_UP_FAST GPIO_PIN_4
-#define ADDR_OK GPIO_PIN_9
-#define INPUT_FAST GPIO_PIN_10
+#define COMP_NON_INVERTING ((uint16_t)GPIO_PIN_3)
+#define COMP_INVERTING ((uint16_t)GPIO_PIN_4)
+#define COMP_OUTPUT ((uint16_t)GPIO_PIN_11)
+#define WAKE_UP_FAST ((uint16_t)GPIO_PIN_4)
+#define ADDR_OK ((uint16_t)GPIO_PIN_9)
+#define INPUT_FAST ((uint16_t)GPIO_PIN_10)
 
 #define DEFAULT_ADDRESS 0x5555
 

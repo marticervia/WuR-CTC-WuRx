@@ -36,9 +36,77 @@
 						TIMx->CR1 &= ~TIM_CR1_CKD;					\
 						TIMx->CR1 |= div;							\
 					}while(0)
+
+#define TIMER_SET_PRELOAD(TIMx, div) 							\
+					do{												\
+						TIMx->CR1 |= ~TIM_CR1_CKD;					\
+						TIMx->CR1 |= div;							\
+					}while(0)
+#define TIMER_CLEAR_PRELOAD(TIMx, div) 							\
+					do{												\
+						TIMx->CR1 &= ~TIM_CR1_CKD;					\
+						TIMx->CR1 |= div;							\
+					}while(0)
+
+#define ADJUST_WITH_NOPS \
+    __asm__ __volatile__ ( \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+    );
+
 /* use ALWAYS values < 0xffff for both of this macros*/
-#define TIMER_SET_PERIOD(TIMx, period) (TIMx->ARR = (uint32_t)period)
-#define TIMER_SET_PRESCALER(TIMx, prescaler) (TIMx->PSC = (uint32_t)prescaler)
+#define TIMER_SET_PERIOD(TIMx, period) (TIMx->ARR = (uint16_t)period)
+#define TIMER_SET_PRESCALER(TIMx, prescaler) (TIMx->PSC = (uint16_t)prescaler)
 #define TIMER_COMMIT_UPDATE(TIMx) (TIMx->EGR = TIM_EGR_UG)
 #define IS_TIMER_EXPIRED(TIMx) ((TIMx->SR &(TIM_FLAG_UPDATE)) == (TIM_FLAG_UPDATE))
 #define CLEAR_TIMER_EXPIRED(TIMx) (TIMx->SR &= ~(TIM_FLAG_UPDATE))

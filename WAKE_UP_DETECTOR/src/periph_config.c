@@ -140,7 +140,7 @@ void TIMER_Config(){
 	__TIM21_CLK_ENABLE();
 	TIMER_SET_COUNTING_MODE(TIM21, TIM_COUNTERMODE_UP);
 	TIMER_SET_CLOCK_DIVISOR(TIM21, TIM_CLOCKDIVISION_DIV1);
-	TIMER_SET_PERIOD(TIM21, 63);
+	TIMER_SET_PERIOD(TIM21, 64);
 	TIMER_SET_PRESCALER(TIM21, 0);
 	TIMER_COMMIT_UPDATE(TIM21);
 	__TIM21_CLK_DISABLE();
@@ -188,11 +188,11 @@ void pinModeinit(void){
 	  GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
 	  GPIO_InitStructure.Pull = GPIO_NOPULL;
 	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
-	  //HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 	  /* Enable and set Button EXTI Interrupt to the lowest priority */
 	  //HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);
 
-	  //memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
+	  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 	  /* set all the rest of pins to ANALOG NOPULL to save power.*/
 	  GPIO_InitStructure.Pin = GPIO_PIN_All;
 	  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
@@ -213,11 +213,14 @@ void pinModeinit(void){
 
 void pinModeSleep(void){
 	HAL_NVIC_DisableIRQ((IRQn_Type)(EXTI4_15_IRQn));
+    HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
+
 	__HAL_RCC_GPIOA_CLK_DISABLE();
 
 }
 
 void pinModeAwake(void){
     __HAL_RCC_GPIOA_CLK_ENABLE();
-	HAL_NVIC_EnableIRQ((IRQn_Type)(EXTI4_15_IRQn));
+    HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
+	HAL_NVIC_DisableIRQ((IRQn_Type)(EXTI4_15_IRQn));
 }

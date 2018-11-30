@@ -88,7 +88,7 @@ static void sleepMCU(void){
 	pinModeAwake();
     PIN_SET(GPIOA, WAKE_UP_FAST);
     /* Configures system clock after wake-up from STOP*/
-   // SystemPower_ConfigSTOP();
+    SystemPower_ConfigSTOP();
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -154,7 +154,7 @@ int  main(void)
 		__TIM2_CLK_ENABLE();
 		CLEAR_TIMER_EXPIRED(TIM2);
 		/* wait 100 us for preamble init.*/
-		TIMER_SET_PERIOD(TIM2, 1865);
+		TIMER_SET_PERIOD(TIM2, 980);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		TIMER_ENABLE(TIM2);
@@ -168,10 +168,7 @@ int  main(void)
 		/*wait for first 1 */
 		PIN_SET(GPIOA, ADDR_OK);
 		PIN_RESET(GPIOA, ADDR_OK);
-		//HAL_SuspendTick();
 		/* read 4 bits */
-
-		ADJUST_WITH_NOPS;
 
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[0]){

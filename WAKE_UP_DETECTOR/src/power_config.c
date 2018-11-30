@@ -97,7 +97,7 @@ void SystemPower_ConfigSTOP(void)
 	RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
 	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
-	RCC_OscInitStruct.HSICalibrationValue = 0x0;
+	RCC_OscInitStruct.HSICalibrationValue = 0x20;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	  System_Error_Handler();

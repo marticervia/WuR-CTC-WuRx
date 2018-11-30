@@ -74,7 +74,7 @@ static volatile uint32_t timer_timeout = 0;
 /* Private function prototypes -----------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
-static uint16_t expected_addr[16] = {0,INPUT_FAST,0,INPUT_FAST,0,0,INPUT_FAST,INPUT_FAST,0,0,0,0,INPUT_FAST,INPUT_FAST,INPUT_FAST,INPUT_FAST};
+static uint16_t expected_addr[20] = {0, 0, INPUT_FAST, 0, 0,INPUT_FAST,0,INPUT_FAST,0,0,INPUT_FAST,INPUT_FAST,0,0,0,0,INPUT_FAST,INPUT_FAST,INPUT_FAST,INPUT_FAST};
 
 static void sleepMCU(void){
     /* shut down indicator */
@@ -173,224 +173,208 @@ int  main(void)
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result == INPUT_FAST){
-			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
-			continue;
-		}
-		PIN_RESET(GPIOA, ADDR_OK);
-
-		ADJUST_WITH_NOPS;
-
-		PIN_SET(GPIOA, ADDR_OK);
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result == INPUT_FAST){
-			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
-			continue;
-		}
-		PIN_RESET(GPIOA, ADDR_OK);
-
-		ADJUST_WITH_NOPS;
-
-
-		PIN_SET(GPIOA, ADDR_OK);
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != INPUT_FAST){
-			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
-			continue;
-		}
-		PIN_RESET(GPIOA, ADDR_OK);
-
-		ADJUST_WITH_NOPS;
-
-		PIN_SET(GPIOA, ADDR_OK);
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result == INPUT_FAST){
-			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
-			continue;
-		}
-		PIN_RESET(GPIOA, ADDR_OK);
-
-		ADJUST_WITH_NOPS;
-
-		PIN_SET(GPIOA, ADDR_OK);
-		result = READ_PIN(GPIOA, INPUT_FAST);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[0]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[1]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
+
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[2]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[3]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[4]){
 			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[5]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[6]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[7]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[8]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[9]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[10]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[11]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[12]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[13]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		ADJUST_WITH_NOPS;
 
-		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[14]){
-			goToSleep(&wur_ctxt);
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
-		PIN_RESET(GPIOA, ADDR_OK);
+
+		ADJUST_WITH_NOPS;
+
+		result = READ_PIN(GPIOA, INPUT_FAST);
+		if(result != expected_addr[15]){
+			PIN_SET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
+			continue;
+		}
+
+		ADJUST_WITH_NOPS;
+
+		result = READ_PIN(GPIOA, INPUT_FAST);
+		if(result != expected_addr[16]){
+			PIN_SET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
+			continue;
+		}
+
+		ADJUST_WITH_NOPS;
+
+		result = READ_PIN(GPIOA, INPUT_FAST);
+		if(result != expected_addr[17]){
+			PIN_SET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
+			continue;
+		}
+
+		ADJUST_WITH_NOPS;
+
+		result = READ_PIN(GPIOA, INPUT_FAST);
+		if(result != expected_addr[18]){
+			PIN_SET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
+			continue;
+		}
 
 		ADJUST_WITH_NOPS;
 
 		PIN_SET(GPIOA, ADDR_OK);
 		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[15]){
-			goToSleep(&wur_ctxt);
+		if(result != expected_addr[19]){
+			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			goToSleep(&wur_ctxt);
 			continue;
 		}
+
+		PIN_SET(GPIOA, ADDR_OK);
+		ADJUST_WITH_NOPS;
 		PIN_RESET(GPIOA, ADDR_OK);
 
 		goToSleep(&wur_ctxt);

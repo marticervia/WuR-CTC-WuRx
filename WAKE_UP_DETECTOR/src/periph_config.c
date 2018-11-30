@@ -172,14 +172,14 @@ void pinModeinit(void){
 	  GPIO_InitStructure.Pin = WAKE_UP_FAST;
 	  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
 	  GPIO_InitStructure.Pull = GPIO_PULLDOWN;
-	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 	  GPIO_InitStructure.Pin = ADDR_OK;
 	  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
 	  GPIO_InitStructure.Pull = GPIO_PULLDOWN;
-	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	  /* configure fast input*/
@@ -187,7 +187,7 @@ void pinModeinit(void){
 	  GPIO_InitStructure.Pin = INPUT_FAST;
 	  GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
 	  GPIO_InitStructure.Pull = GPIO_NOPULL;
-	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 	  /* Enable and set Button EXTI Interrupt to the lowest priority */
 	  //HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);

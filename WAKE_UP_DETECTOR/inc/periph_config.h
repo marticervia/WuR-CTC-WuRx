@@ -102,6 +102,10 @@
         "nop\r\n" \
 		"nop\r\n" \
         "nop\r\n" \
+		"nop\r\n" \
+		"nop\r\n" \
+		"nop\r\n" \
+		"nop\r\n" \
     );
 
 /* use ALWAYS values < 0xffff for both of this macros*/

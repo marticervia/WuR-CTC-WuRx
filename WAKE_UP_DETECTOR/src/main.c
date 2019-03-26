@@ -100,6 +100,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 
 static void goToSleep(void){
+	PIN_SET(GPIOA, ADDR_OK);
+	PIN_RESET(GPIOA, ADDR_OK);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	TIMER_DISABLE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_DISABLE(TIM21);
@@ -144,7 +147,9 @@ int  main(void)
 		__TIM2_CLK_ENABLE();
 		CLEAR_TIMER_EXPIRED(TIM2);
 		/* wait 100 us for preamble init.*/
-		TIMER_SET_PERIOD(TIM2, 980);
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+
+		TIMER_SET_PERIOD(TIM2, 1060);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		TIMER_ENABLE(TIM2);
@@ -154,233 +159,15 @@ int  main(void)
 
 		TIMER_DISABLE(TIM2);
 
-		/* start decoding preamble*/
-		/*wait for first 1 */
-		PIN_SET(GPIOA, WAKE_UP_FAST);
-		/* read 4 bits */
-
-		/*YO DAWG, so I heard you liked loop unrolling... */
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[0]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
+		for( uint8_t loop = 0; loop < MAX_LOOPS; loop ++){
+			result = READ_PIN(GPIOA, INPUT_FAST);
+			if(result != expected_addr[loop]){
+				goToSleep();
+				break;
+			}
+			//52 cycles left still to do crazy shit
+			ADJUST_WITH_NOPS;
 		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[1]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[2]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[3]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[4]){
-			goToSleep();
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[5]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[6]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[7]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[8]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[9]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[10]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[11]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[12]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[13]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[14]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[15]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[16]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[17]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[18]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-
-		ADJUST_WITH_NOPS;
-
-		PIN_SET(GPIOA, ADDR_OK);
-		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[19]){
-			PIN_SET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, ADDR_OK);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			goToSleep();
-			continue;
-		}
-		ADJUST_WITH_NOPS;
 
 		PIN_SET(GPIOA, ADDR_OK);
 		ADJUST_WITH_NOPS;

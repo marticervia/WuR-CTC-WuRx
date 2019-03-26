@@ -12,7 +12,7 @@
 #define USE_CMP
 //#define BUSY_WAIT
 #define USE_ULP
-
+#define MAX_LOOPS 20
 
 #define COMP_NON_INVERTING ((uint16_t)GPIO_PIN_3)
 #define COMP_INVERTING ((uint16_t)GPIO_PIN_4)

@@ -98,23 +98,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 
 
-static void initWuRxContext(wurx_context_t* context){
-	context->wurx_address = DEFAULT_ADDRESS;
-	context->wurx_state = WURX_SLEEP;
 
-	/* use Timer 2 with a 100 us timeout*/
-	HAL_TIM_Base_DeInit(&timeout_timer);
-	timeout_timer.Instance = TIM2;
-}
-
-static void goToSleep(wurx_context_t* wur_ctxt){
+static void goToSleep(void){
 	TIMER_DISABLE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_DISABLE(TIM21);
 	CLEAR_TIMER_EXPIRED(TIM21);
 	__TIM2_CLK_DISABLE();
 	__TIM21_CLK_DISABLE();
-	wur_ctxt->wurx_state = WURX_SLEEP;
 }
 
 /* sets all pins to analog input, but SWD */
@@ -127,7 +118,6 @@ static void goToSleep(wurx_context_t* wur_ctxt){
 
 int  main(void)
 {
-	wurx_context_t wur_ctxt = {0};
 	/* STM32L0xx HAL library initialization:
 	   - Configure the Flash prefetch, Flash preread and Buffer caches
 	   - Systick timer is configured by default as source of time base, but user
@@ -145,7 +135,7 @@ int  main(void)
 	pinModeinit();
 	TIMER_Config();
 	COMP_Config(&hcomp1);
-	initWuRxContext(&wur_ctxt);
+
 	while (1)
 	{
 		uint32_t result = 0;
@@ -166,15 +156,16 @@ int  main(void)
 
 		/* start decoding preamble*/
 		/*wait for first 1 */
-		PIN_SET(GPIOA, ADDR_OK);
-		PIN_RESET(GPIOA, ADDR_OK);
+		PIN_SET(GPIOA, WAKE_UP_FAST);
 		/* read 4 bits */
 
+		/*YO DAWG, so I heard you liked loop unrolling... */
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[0]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -184,7 +175,8 @@ int  main(void)
 		if(result != expected_addr[1]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -195,7 +187,8 @@ int  main(void)
 		if(result != expected_addr[2]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -205,7 +198,8 @@ int  main(void)
 		if(result != expected_addr[3]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -213,9 +207,10 @@ int  main(void)
 
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		if(result != expected_addr[4]){
-			goToSleep(&wur_ctxt);
+			goToSleep();
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
 			continue;
 		}
 
@@ -225,7 +220,8 @@ int  main(void)
 		if(result != expected_addr[5]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -235,7 +231,8 @@ int  main(void)
 		if(result != expected_addr[6]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -245,7 +242,8 @@ int  main(void)
 		if(result != expected_addr[7]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -255,7 +253,8 @@ int  main(void)
 		if(result != expected_addr[8]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -265,7 +264,8 @@ int  main(void)
 		if(result != expected_addr[9]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -275,7 +275,8 @@ int  main(void)
 		if(result != expected_addr[10]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -285,7 +286,9 @@ int  main(void)
 		if(result != expected_addr[11]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+
+			goToSleep();
 			continue;
 		}
 
@@ -295,7 +298,8 @@ int  main(void)
 		if(result != expected_addr[12]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -305,7 +309,8 @@ int  main(void)
 		if(result != expected_addr[13]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -315,7 +320,8 @@ int  main(void)
 		if(result != expected_addr[14]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -325,7 +331,8 @@ int  main(void)
 		if(result != expected_addr[15]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -335,7 +342,8 @@ int  main(void)
 		if(result != expected_addr[16]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -345,7 +353,8 @@ int  main(void)
 		if(result != expected_addr[17]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -355,7 +364,8 @@ int  main(void)
 		if(result != expected_addr[18]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
 
@@ -366,15 +376,17 @@ int  main(void)
 		if(result != expected_addr[19]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			goToSleep(&wur_ctxt);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			goToSleep();
 			continue;
 		}
+		ADJUST_WITH_NOPS;
 
 		PIN_SET(GPIOA, ADDR_OK);
 		ADJUST_WITH_NOPS;
 		PIN_RESET(GPIOA, ADDR_OK);
 
-		goToSleep(&wur_ctxt);
+		goToSleep();
 
 	}
 }

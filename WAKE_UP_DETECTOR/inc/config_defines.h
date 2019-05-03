@@ -14,6 +14,8 @@
 #define USE_ULP
 #define MAX_LOOPS 20
 
+//128 bits plus 16 bits of headers and a crc 8
+#define MAX_FRAME_LEN 19
 #define COMP_NON_INVERTING ((uint16_t)GPIO_PIN_3)
 #define COMP_INVERTING ((uint16_t)GPIO_PIN_4)
 #define COMP_OUTPUT ((uint16_t)GPIO_PIN_11)

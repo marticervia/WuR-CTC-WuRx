@@ -104,6 +104,7 @@
         "nop\r\n" \
     );
 
+#define APPLY_ADDR_MASK(addr) (addr & 0x3F)
 /* use ALWAYS values < 0xffff for both of this macros*/
 #define TIMER_SET_PERIOD(TIMx, period) (TIMx->ARR = (uint16_t)period)
 #define TIMER_SET_PRESCALER(TIMx, prescaler) (TIMx->PSC = (uint16_t)prescaler)

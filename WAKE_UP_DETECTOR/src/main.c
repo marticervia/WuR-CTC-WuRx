@@ -60,11 +60,14 @@ typedef enum wurx_states{
 	WURX_WAITING_PREAMBLE = 1,
 	WURX_DECODING_FRAME = 2,
 	WURX_GOING_TO_SLEEP = 3,
+	WURX_HAS_FRAME = 0,
 }wurx_states_t;
 
 typedef struct wurx_context{
 	wurx_states_t wurx_state;
 	uint16_t wurx_address;
+	uint8_t frame_len;
+	uint8_t frame_buffer[MAX_FRAME_LEN];
 }wurx_context_t;
 
 /* Private define ------------------------------------------------------------*/
@@ -76,8 +79,12 @@ static volatile uint32_t timer_timeout = 0;
 /* Private functions ---------------------------------------------------------*/
 static uint16_t expected_addr[20] = {0, 0, INPUT_FAST, 0, 0,INPUT_FAST,0,INPUT_FAST,0,0,INPUT_FAST,INPUT_FAST,0,0,0,0,INPUT_FAST,INPUT_FAST,INPUT_FAST,INPUT_FAST};
 
-static void sleepMCU(void){
+static void sleepMCU(wurx_context_t* wur_context){
     /* shut down indicator */
+	if(wur_context->wurx_state != WURX_HAS_FRAME){
+		wur_context->wurx_state = WURX_SLEEP;
+	}
+
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	pinModeSleep();
     HAL_SuspendTick();
@@ -98,8 +105,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 
 
+static void initWuRContext(wurx_context_t* context){
+	context->wurx_state = WURX_GOING_TO_SLEEP;
+	context->wurx_address = APPLY_ADDR_MASK(DEFAULT_ADDRESS);
+	context->frame_len = 0;
+	memset(context->frame_buffer, 0, MAX_FRAME_LEN)	;
+}
 
-static void goToSleep(void){
+static void goToSleep(wurx_context_t* wur_context){
+
+	if(wur_context->wurx_state != WURX_HAS_FRAME){
+		wur_context->wurx_state = WURX_GOING_TO_SLEEP;
+	}
+
 	PIN_SET(GPIOA, ADDR_OK);
 	PIN_RESET(GPIOA, ADDR_OK);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
@@ -119,31 +137,13 @@ static void goToSleep(void){
 * @retval None
 */
 
-int  main(void)
-{
-	/* STM32L0xx HAL library initialization:
-	   - Configure the Flash prefetch, Flash preread and Buffer caches
-	   - Systick timer is configured by default as source of time base, but user
-			 can eventually implement his proper time base source (a general purpose
-			 timer for example or other time source), keeping in mind that Time base
-			 duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
-			 handled in milliseconds basis.
-	   - Low Level Initialization
-	 */
-	HAL_Init();
-
-	/* Configure the system Power */
-	SystemPower_Config();
-
-	pinModeinit();
-	TIMER_Config();
-	COMP_Config(&hcomp1);
+static void loopWuR(wurx_context_t* context){
 
 	while (1)
 	{
 		uint32_t result = 0;
 		/* this one blocks until MCU wakes*/
-		sleepMCU();
+		sleepMCU(context);
 		__TIM2_CLK_ENABLE();
 		CLEAR_TIMER_EXPIRED(TIM2);
 		/* wait 100 us for preamble init.*/
@@ -159,10 +159,11 @@ int  main(void)
 
 		TIMER_DISABLE(TIM2);
 
-		for( uint8_t loop = 0; loop < MAX_LOOPS; loop ++){
+		//12 instructions loop
+		for(uint8_t loop = 0; loop < MAX_LOOPS; loop++){
 			result = READ_PIN(GPIOA, INPUT_FAST);
 			if(result != expected_addr[loop]){
-				goToSleep();
+				goToSleep(context);
 				break;
 			}
 			//52 cycles left still to do crazy shit
@@ -173,9 +174,27 @@ int  main(void)
 		ADJUST_WITH_NOPS;
 		PIN_RESET(GPIOA, ADDR_OK);
 
-		goToSleep();
-
+		goToSleep(context);
 	}
+}
+
+int main(void)
+{
+
+	wurx_context_t context;
+	initWuRContext(&context);
+
+	HAL_Init();
+
+	/* Configure the system Power */
+	SystemPower_Config();
+
+	pinModeinit();
+	TIMER_Config();
+	COMP_Config(&hcomp1);
+
+	loopWuR(&context);
+
 }
 
 

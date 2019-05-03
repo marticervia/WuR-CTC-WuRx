@@ -16,6 +16,7 @@
 
 #define USE_CMP
 
+extern I2C_HandleTypeDef I2cHandle;
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -53,6 +54,11 @@ void EXTI4_15_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
   HAL_TIM_IRQHandler(&timeout_timer);
+}
+void I2Cx_IRQHandler(void)
+{
+HAL_I2C_EV_IRQHandler(&I2cHandle);
+HAL_I2C_ER_IRQHandler(&I2cHandle);
 }
 
 

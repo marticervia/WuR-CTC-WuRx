@@ -9,20 +9,7 @@
 COMP_HandleTypeDef hcomp1;
 TIM_HandleTypeDef  timeout_timer;
 
-typedef enum wurx_states{
-	WURX_SLEEP = 0,
-	WURX_WAITING_PREAMBLE = 1,
-	WURX_DECODING_FRAME = 2,
-	WURX_GOING_TO_SLEEP = 3,
-	WURX_HAS_FRAME = 0,
-}wurx_states_t;
-
-typedef struct wurx_context{
-	wurx_states_t wurx_state;
-	uint16_t wurx_address;
-	uint8_t frame_len;
-	uint8_t frame_buffer[MAX_FRAME_LEN];
-}wurx_context_t;
+I2C_HandleTypeDef I2cHandle;
 
 static volatile uint32_t timer_timeout = 0;
 static uint16_t expected_addr[20] = {0, 0, INPUT_FAST, 0, 0,INPUT_FAST,0,INPUT_FAST,0,0,INPUT_FAST,INPUT_FAST,0,0,0,0,INPUT_FAST,INPUT_FAST,INPUT_FAST,INPUT_FAST};
@@ -136,7 +123,7 @@ int main(void)
 
 	/* Configure the system Power */
 	SystemPower_Config();
-
+	i2CConfig(&context);
 	pinModeinit();
 	TIMER_Config();
 	COMP_Config(&hcomp1);

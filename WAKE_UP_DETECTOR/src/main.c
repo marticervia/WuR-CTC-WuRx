@@ -40,7 +40,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 
 
-static void initWuRContext(wurx_context_t* context){
+void initWuRContext(wurx_context_t* context){
 	context->wurx_state = WURX_GOING_TO_SLEEP;
 	context->wurx_address = APPLY_ADDR_MASK(DEFAULT_ADDRESS);
 	context->frame_len = 0;

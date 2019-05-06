@@ -62,6 +62,8 @@ typedef struct wurx_context{
 	uint8_t frame_buffer[MAX_FRAME_LEN];
 }wurx_context_t;
 
+void initWuRContext(wurx_context_t* context);
+
 #endif /* __MAIN_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

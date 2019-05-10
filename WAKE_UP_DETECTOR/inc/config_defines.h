@@ -20,6 +20,7 @@
 #define WAKE_UP_FAST ((uint16_t)GPIO_PIN_4)
 #define ADDR_OK ((uint16_t)GPIO_PIN_9)
 #define INPUT_FAST ((uint16_t)GPIO_PIN_10)
+#define WAKE_UP_I2C ((uint16_t)GPIO_PIN_15)
 
 /* Definition for I2Cx Pins */
 #define I2Cx_SCL_PIN                    GPIO_PIN_8

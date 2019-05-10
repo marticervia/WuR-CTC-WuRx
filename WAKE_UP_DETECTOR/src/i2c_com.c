@@ -197,12 +197,10 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 }
 
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *I2cHandle, uint8_t TransferDirection, uint16_t AddrMatchCode){
-	  i2c_state_machine(I2C_ADDR_EVENT, I2cHandle);
-
+  i2c_state_machine(I2C_ADDR_EVENT, I2cHandle);
 }
 void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *I2cHandle){
-	  i2c_state_machine(I2C_LISTEN_EVENT, I2cHandle);
-
+  i2c_state_machine(I2C_LISTEN_EVENT, I2cHandle);
 }
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *I2cHandle)
@@ -243,6 +241,7 @@ void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle){
 	  wur_context = context;
 	  /* Enable the Analog I2C Filter */
 	  HAL_I2CEx_ConfigAnalogFilter(I2cHandle,I2C_ANALOGFILTER_ENABLE);
+	  //HAL_I2CEx_EnableWakeUp(I2cHandle);
 
 	  reset_i2c_state(I2cHandle);
 }

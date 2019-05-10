@@ -48,7 +48,7 @@ void ADC1_COMP_IRQHandler(void)
 
 void EXTI4_15_IRQHandler(void)
 {
-  HAL_GPIO_EXTI_IRQHandler(INPUT_FAST);
+  HAL_GPIO_EXTI_IRQHandler(WAKE_UP_I2C);
 }
 
 void TIM2_IRQHandler(void)

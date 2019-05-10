@@ -14,6 +14,7 @@ I2C_HandleTypeDef I2cHandle;
 
 static volatile uint32_t timer_timeout = 0;
 static uint16_t expected_addr[20] = {0, 0, INPUT_FAST, 0, 0,INPUT_FAST,0,INPUT_FAST,0,0,INPUT_FAST,INPUT_FAST,0,0,0,0,INPUT_FAST,INPUT_FAST,INPUT_FAST,INPUT_FAST};
+volatile uint8_t I2C_operation = 0;
 
 static void sleepMCU(wurx_context_t* wur_context){
     /* shut down indicator */
@@ -26,7 +27,7 @@ static void sleepMCU(wurx_context_t* wur_context){
     HAL_SuspendTick();
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
     HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
-    //HAL_ResumeTick();
+    HAL_ResumeTick();
     /* restart indicator */
 	pinModeAwake();
     PIN_SET(GPIOA, WAKE_UP_FAST);
@@ -114,20 +115,33 @@ static void loopWuR(wurx_context_t* context){
 	}
 }
 
-static uint32_t dummyLoop(uint32_t counter){
-	uint8_t send_buffer[3];
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(GPIO_Pin == WAKE_UP_I2C)
+  {
+	  /* flag the start of an I2C operation */
+	  I2C_operation = 1;
+  }
 
-	while(counter < 0xFFFFFFFF){
-		HAL_Delay(1000);
-		counter++;
+}
+
+
+static void dummyLoop(wurx_context_t* context){
+
+	while(1){
+		sleepMCU(context);
+		if(I2C_operation){
+			/* clear I2C OP flag*/
+			I2C_operation = 0;
+			HAL_Delay(10);
+		}
+		/*wait 100 mullis for operation completition */
+		goToSleep(context);
 	}
-
-	return counter;
 }
 
 int main(void)
 {
-	uint32_t counter = 0;
 
 	wurx_context_t context;
 	initWuRContext(&context);
@@ -140,7 +154,7 @@ int main(void)
 	pinModeinit();
 	TIMER_Config();
 	COMP_Config(&hcomp1);
-	dummyLoop(counter);
+	dummyLoop(&context);
 	//first test if I2C is working, just by default.
 
 	loopWuR(&context);

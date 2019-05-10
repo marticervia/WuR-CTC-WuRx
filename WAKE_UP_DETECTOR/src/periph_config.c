@@ -209,11 +209,11 @@ void pinModeinit(void){
 	  __HAL_RCC_GPIOH_CLK_ENABLE();
 
 	  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
-	  /* Configure rest of GPIO port pins in Analog Input mode (floating input trigger OFF) */
+	  /* Configure SWD pins in Analog Input mode (floating input trigger OFF) */
 	  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
 	  GPIO_InitStructure.Pull = GPIO_NOPULL;
 	  GPIO_InitStructure.Pin = GPIO_PIN_All;
-	  GPIO_InitStructure.Pin = GPIO_PIN_All & ~((uint32_t)(1<<13) | (uint32_t)(1<<14) | (uint32_t)(1<<12));
+	  GPIO_InitStructure.Pin = GPIO_PIN_All & ~(GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_12);
 	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	/* configure OUTPUTs */
@@ -242,6 +242,16 @@ void pinModeinit(void){
 	  //HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);
 
 	  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
+	  GPIO_InitStructure.Pin = WAKE_UP_I2C;
+	  GPIO_InitStructure.Mode   = GPIO_MODE_IT_RISING;
+	  GPIO_InitStructure.Pull = GPIO_NOPULL;
+	  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+	  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	  HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 3, 0);
+	  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
+
+	  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 	  /* set all the rest of pins to ANALOG NOPULL to save power.*/
 	  GPIO_InitStructure.Pin = GPIO_PIN_All;
 	  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
@@ -252,22 +262,15 @@ void pinModeinit(void){
 	  HAL_GPIO_Init(GPIOH, &GPIO_InitStructure);
 
 	  /* Disable unneeded GPIOs clock */
-	  __HAL_RCC_GPIOA_CLK_DISABLE();
 	  __HAL_RCC_GPIOC_CLK_DISABLE();
 	  __HAL_RCC_GPIOD_CLK_DISABLE();
 	  __HAL_RCC_GPIOH_CLK_DISABLE();
 }
 
 void pinModeSleep(void){
-	HAL_NVIC_DisableIRQ((IRQn_Type)(EXTI4_15_IRQn));
     HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
-
-	__HAL_RCC_GPIOA_CLK_DISABLE();
-
 }
 
 void pinModeAwake(void){
-    __HAL_RCC_GPIOA_CLK_ENABLE();
     HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
-	HAL_NVIC_DisableIRQ((IRQn_Type)(EXTI4_15_IRQn));
 }

@@ -22,8 +22,8 @@
   */
 void SystemPower_Config(void)
 {
-	RCC_ClkInitTypeDef RCC_ClkInitStruct;
-	RCC_OscInitTypeDef RCC_OscInitStruct;
+	RCC_ClkInitTypeDef RCC_ClkInitStruct ={0};
+	RCC_OscInitTypeDef RCC_OscInitStruct ={0};
 
 	/* Enable Power Control clock */
 	__HAL_RCC_PWR_CLK_ENABLE();
@@ -66,7 +66,6 @@ void SystemPower_Config(void)
   /* Enable the fast wake up from Ultra low power mode */
   HAL_PWREx_EnableFastWakeUp();
   /* Select HSI as system clock source after Wake Up from Stop mode */
-  __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);
 }
 
 

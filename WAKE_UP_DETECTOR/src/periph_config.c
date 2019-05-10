@@ -23,9 +23,9 @@ void HAL_COMP_MspInit(COMP_HandleTypeDef* hcomp)
   memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 
   GPIO_InitStructure.Pin = COMP_OUTPUT;
-  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStructure.Pull = GPIO_NOPULL;
-  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_MEDIUM;
   GPIO_InitStructure.Alternate = GPIO_AF7_COMP1;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
@@ -35,7 +35,7 @@ void HAL_COMP_MspInit(COMP_HandleTypeDef* hcomp)
 
   GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStructure.Pull = GPIO_NOPULL;
-  GPIO_InitStructure.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+  GPIO_InitStructure.Pin = COMP_INVERTING | COMP_NON_INVERTING;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
   /*##-3- Configure the NVIC for COMP1 #######################################*/
@@ -149,14 +149,16 @@ void TIMER_Config(){
 
 void TIMER21_Config(TIM_TypeDef* TIMx){
 
-}void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c)
+}
+
+void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c)
 {
   GPIO_InitTypeDef  GPIO_InitStruct;
   RCC_PeriphCLKInitTypeDef  RCC_PeriphCLKInitStruct;
 
   /*##-1- Configure the I2C clock source. The clock is derived from the SYSCLK #*/
-  RCC_PeriphCLKInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2Cx;
-  RCC_PeriphCLKInitStruct.I2c1ClockSelection = RCC_I2CxCLKSOURCE_SYSCLK;
+  RCC_PeriphCLKInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
+  RCC_PeriphCLKInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphCLKInitStruct);
 
   /*##-2- Enable peripherals and GPIO Clocks #################################*/
@@ -168,17 +170,12 @@ void TIMER21_Config(TIM_TypeDef* TIMx){
 
   /*##-3- Configure peripheral GPIO ##########################################*/
   /* I2C TX GPIO pin configuration  */
-  GPIO_InitStruct.Pin       = I2Cx_SCL_PIN;
+  GPIO_InitStruct.Pin       = I2Cx_SCL_PIN | I2Cx_SDA_PIN;
   GPIO_InitStruct.Mode      = GPIO_MODE_AF_OD;
   GPIO_InitStruct.Pull      = GPIO_PULLUP;
   GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.Alternate = I2Cx_SCL_SDA_AF;
   HAL_GPIO_Init(I2Cx_SCL_GPIO_PORT, &GPIO_InitStruct);
-
-  /* I2C RX GPIO pin configuration  */
-  GPIO_InitStruct.Pin       = I2Cx_SDA_PIN;
-  GPIO_InitStruct.Alternate = I2Cx_SCL_SDA_AF;
-  HAL_GPIO_Init(I2Cx_SDA_GPIO_PORT, &GPIO_InitStruct);
 
   /*##-4- Configure the NVIC for I2C ########################################*/
   /* NVIC for I2Cx */
@@ -207,7 +204,6 @@ void pinModeinit(void){
 	GPIO_InitTypeDef GPIO_InitStructure = {0};
 	  /* Enable GPIOs clock, PORTC is enabled when activating the button interrupt. */
 	  __HAL_RCC_GPIOA_CLK_ENABLE();
-	  __HAL_RCC_GPIOB_CLK_ENABLE();
 	  __HAL_RCC_GPIOC_CLK_ENABLE();
 	  __HAL_RCC_GPIOD_CLK_ENABLE();
 	  __HAL_RCC_GPIOH_CLK_ENABLE();
@@ -251,14 +247,12 @@ void pinModeinit(void){
 	  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
 	  GPIO_InitStructure.Pull = GPIO_NOPULL;
 
-	  HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
 	  HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 	  HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
 	  HAL_GPIO_Init(GPIOH, &GPIO_InitStructure);
 
 	  /* Disable unneeded GPIOs clock */
 	  __HAL_RCC_GPIOA_CLK_DISABLE();
-	  __HAL_RCC_GPIOB_CLK_DISABLE();
 	  __HAL_RCC_GPIOC_CLK_DISABLE();
 	  __HAL_RCC_GPIOD_CLK_DISABLE();
 	  __HAL_RCC_GPIOH_CLK_DISABLE();

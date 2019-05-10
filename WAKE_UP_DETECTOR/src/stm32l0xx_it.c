@@ -57,8 +57,8 @@ void TIM2_IRQHandler(void)
 }
 void I2Cx_IRQHandler(void)
 {
-HAL_I2C_EV_IRQHandler(&I2cHandle);
-HAL_I2C_ER_IRQHandler(&I2cHandle);
+	HAL_I2C_EV_IRQHandler(&I2cHandle);
+	HAL_I2C_ER_IRQHandler(&I2cHandle);
 }
 
 

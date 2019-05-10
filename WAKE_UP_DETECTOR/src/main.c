@@ -5,6 +5,7 @@
 #include "user_handlers.h"
 #include "config_defines.h"
 #include "power_config.h"
+#include "i2c_com.h"
 
 COMP_HandleTypeDef hcomp1;
 TIM_HandleTypeDef  timeout_timer;
@@ -113,8 +114,20 @@ static void loopWuR(wurx_context_t* context){
 	}
 }
 
+static uint32_t dummyLoop(uint32_t counter){
+	uint8_t send_buffer[3];
+
+	while(counter < 0xFFFFFFFF){
+		HAL_Delay(1000);
+		counter++;
+	}
+
+	return counter;
+}
+
 int main(void)
 {
+	uint32_t counter = 0;
 
 	wurx_context_t context;
 	initWuRContext(&context);
@@ -123,10 +136,12 @@ int main(void)
 
 	/* Configure the system Power */
 	SystemPower_Config();
-	i2CConfig(&context);
+	i2CConfig(&context, &I2cHandle);
 	pinModeinit();
 	TIMER_Config();
 	COMP_Config(&hcomp1);
+	dummyLoop(counter);
+	//first test if I2C is working, just by default.
 
 	loopWuR(&context);
 

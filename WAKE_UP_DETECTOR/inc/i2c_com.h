@@ -26,7 +26,9 @@ void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle);
 typedef enum i2c_result{
 	I2C_SUCCESS_READ = 0,
 	I2C_SUCCESS_WRITE = 1,
-	I2C_ERROR = 2
+	I2C_ERROR = 2,
+	I2C_ADDR_EVENT =3,
+	I2C_LISTEN_EVENT = 4
 }i2c_result_t;
 
 typedef enum i2c_operation{

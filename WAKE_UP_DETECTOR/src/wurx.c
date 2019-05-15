@@ -28,9 +28,30 @@ static const uint8_t CRC_8_TABLE[256] =
 	233,183, 85, 11,136,214, 52,106, 43,117,151,201, 74, 20,246,168,
 	116, 42,200,150, 21, 75,169,247,182,232, 10, 84,215,137,107, 53
 };
+
 static uint16_t expected_preamble[4] = {INPUT_FAST, INPUT_FAST, 0, INPUT_FAST};
 static uint16_t expected_addr[16] = {0,INPUT_FAST,0,INPUT_FAST,0,0,INPUT_FAST,INPUT_FAST,0,0,0,0,INPUT_FAST,INPUT_FAST,INPUT_FAST,INPUT_FAST};
 
+/* the length of the output array must be at least 12!*/
+void WuR_set_hex_addr(uint16_t input_addr, wurx_context_t* context){
+	/* apply mask!*/
+	input_addr = APPLY_ADDR_MASK(input_addr);
+
+	/* from MSB to LSB*/
+	for(uint8_t bit_index = 0; bit_index < ADDR_LEN; bit_index++){
+		context->wurx_address[bit_index] = (input_addr &  (1 << (11 - bit_index))) ? INPUT_FAST : 0;
+	}
+}
+
+uint16_t WuR_get_hex_addr(wurx_context_t* context){
+	uint16_t wur_addr = 0;
+	for(uint8_t bit_index = 0; bit_index < ADDR_LEN; bit_index++){
+		if(context->wurx_address[bit_index]){
+			wur_addr |= 1 << (11 - bit_index);
+		}
+	}
+	return wur_addr;
+}
 
 void WuR_clear_buffer(wurx_context_t* context){
 	memset(context->frame_buffer, 0, MAX_FRAME_LEN);
@@ -39,9 +60,9 @@ void WuR_clear_buffer(wurx_context_t* context){
 
 void WuR_init_context(wurx_context_t* context){
 	context->wurx_state = WURX_SLEEP;
-	context->wurx_address = APPLY_ADDR_MASK(DEFAULT_ADDRESS);
-	context->frame_len = 0;
+	WuR_set_hex_addr(DEFAULT_ADDRESS, context);
 	memset(context->frame_buffer, 0, MAX_FRAME_LEN);
+	context->frame_len = 0;
 }
 
 void WuR_set_frame_buffer(wurx_context_t* context, uint8_t* buffer, uint8_t length){
@@ -51,7 +72,7 @@ void WuR_set_frame_buffer(wurx_context_t* context, uint8_t* buffer, uint8_t leng
 
 	for(uint8_t byte_loop = 0; byte_loop < num_byte_loops; byte_loop++){
 		for(uint8_t bit_loop = 0; bit_loop < 8; bit_loop++){
-			context->frame_buffer[byte_loop] |= (buffer[bit_loop + (byte_loop*8)] << (8 - bit_loop));
+			context->frame_buffer[byte_loop] |= (buffer[bit_loop + (byte_loop*8)] << (7 - bit_loop));
 		}
 	}
 	context->frame_len = num_byte_loops;
@@ -176,7 +197,6 @@ void WuR_process_frame(wurx_context_t* context){
 
 	/* first, move from bits to bytes! */
 	WuR_set_frame_buffer(context, frame_buffer, offset);
-
 
 	/* is CRC ok? */
 	if(!WuR_is_CRC_good(context)){

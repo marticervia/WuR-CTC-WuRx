@@ -18,7 +18,7 @@ typedef struct i2c_context{
 	uint8_t i2c_frame_buffer[I2C_BUFFER_SIZE];
 }i2c_context_t;
 
-volatile static wurx_context_t* wur_context = NULL;
+static wurx_context_t* wur_context = NULL;
 volatile static i2c_context_t i2c_context = {0};
 
 static void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
@@ -38,6 +38,7 @@ static void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
 static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandle){
 	uint8_t register_id;
 	uint8_t operation_id;
+	uint16_t address = 0;
 
 	if(i2c_operation == I2C_ERROR){
 		/* restore to the initial state!*/
@@ -85,8 +86,9 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 
 					}
 					else{
-						i2c_context.i2c_frame_buffer[0] = (wur_context->wurx_address & 0x0F00) >> 8;
-						i2c_context.i2c_frame_buffer[1] = wur_context->wurx_address & 0xFF;
+						address = WuR_get_hex_addr(wur_context);
+						i2c_context.i2c_frame_buffer[0] = (address & 0x0F00) >> 8;
+						i2c_context.i2c_frame_buffer[1] = address & 0xFF;
 
 						if(HAL_I2C_Slave_Transmit_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, 2) != HAL_OK)
 						{
@@ -138,9 +140,10 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 			}
 			switch(i2c_context.i2c_last_reg){
 				case I2C_ADDR_REGISTER:
-					wur_context->wurx_address = 0;
-					wur_context->wurx_address |= (i2c_context.i2c_frame_buffer[0] & 0x0F) << 8;
-					wur_context->wurx_address |= i2c_context.i2c_frame_buffer[1];
+					address = 0;
+					address |= (i2c_context.i2c_frame_buffer[0] & 0x0F) << 8;
+					address |= i2c_context.i2c_frame_buffer[1];
+					WuR_set_hex_addr(address, wur_context);
 					reset_i2c_state(I2cHandle);
 					break;
 				default:

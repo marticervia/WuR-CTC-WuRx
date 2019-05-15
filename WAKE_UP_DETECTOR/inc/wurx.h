@@ -32,12 +32,12 @@ typedef enum wurx_states{
 
 typedef struct wurx_context{
 	wurx_states_t wurx_state;
-	uint16_t wurx_address;
+	uint16_t wurx_address[ADDR_LEN];
 	uint8_t frame_len;
 	uint8_t frame_buffer[MAX_FRAME_LEN];
 }wurx_context_t;
 
-#define APPLY_ADDR_MASK(addr) (addr & 0x3F)
+#define APPLY_ADDR_MASK(addr) (addr & 0x0FFF)
 
 void WuR_init_context(wurx_context_t* context);
 void WuR_clear_buffer(wurx_context_t* context);
@@ -45,5 +45,7 @@ void WuR_set_frame_buffer(wurx_context_t* context, uint8_t* buffer, uint8_t leng
 uint8_t WuR_is_CRC_good(wurx_context_t* context);
 void WuR_process_frame(wurx_context_t* context);
 void WuR_go_sleep(wurx_context_t* wur_context);
+void WuR_set_hex_addr(uint16_t input_addr, wurx_context_t* context);
+uint16_t WuR_get_hex_addr(wurx_context_t* context);
 
 #endif

@@ -13,6 +13,7 @@
 #include "stm32l0xx.h"
 #include "stm32l0xx_it.h"
 #include "config_defines.h"
+#include "periph_config.h"
 
 #define USE_CMP
 

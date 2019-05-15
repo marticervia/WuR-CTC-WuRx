@@ -9,6 +9,7 @@
 #define I2C_COM_H_
 
 #include "main.h"
+#include "wurx.h"
 
 #define I2Cx                            I2C1
 #define RCC_PERIPHCLK_I2Cx              RCC_PERIPHCLK_I2C1

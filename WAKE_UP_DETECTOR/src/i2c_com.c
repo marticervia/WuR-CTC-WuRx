@@ -5,8 +5,10 @@
  *      Author: marti
  */
 #include "i2c_com.h"
+
 #include "user_handlers.h"
 #include "config_defines.h"
+#include "periph_config.h"
 #include <string.h>
 
 typedef struct i2c_context{
@@ -160,7 +162,7 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 			switch(i2c_context.i2c_last_reg){
 				case I2C_FRAME_READY_REGISTER:
 					/* as frame has been read, we can flush it and reset the start of the machine*/
-					initWuRContext((wurx_context_t*)wur_context);
+					WuR_init_context((wurx_context_t*)wur_context);
 					reset_i2c_state(I2cHandle);
 					break;
 				default:

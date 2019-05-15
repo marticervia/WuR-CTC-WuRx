@@ -1,0 +1,49 @@
+#ifndef WURX_H_
+#define WURX_H_
+#include "main.h"
+
+#define DEFAULT_ADDRESS 0x0555
+
+#define PREAMBLE_LEN 4
+#define ADDR_LEN 12
+#define FLAGS_LEN 4
+#define LENGTH_LEN 8
+
+#define LEN_ACK_FRAME 8
+#define LEN_WUR_FRAME 8
+#define MAX_LEN_DATA_FRAME 128
+
+#define MAX_FRAME_LEN 19
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
+typedef enum wurx_frame_type{
+	WURX_FRAME_WAKEUP = 0,
+	WURX_FRAME_ACK = 1,
+	WURX_FRAME_DATA = 2
+}wurx_frame_type_t;
+
+typedef enum wurx_states{
+	WURX_SLEEP = 0,
+	WURX_DECODING_FRAME = 1,
+	WURX_HAS_FRAME = 2,
+}wurx_states_t;
+
+typedef struct wurx_context{
+	wurx_states_t wurx_state;
+	uint16_t wurx_address;
+	uint8_t frame_len;
+	uint8_t frame_buffer[MAX_FRAME_LEN];
+}wurx_context_t;
+
+#define APPLY_ADDR_MASK(addr) (addr & 0x3F)
+
+void WuR_init_context(wurx_context_t* context);
+void WuR_clear_buffer(wurx_context_t* context);
+void WuR_set_frame_buffer(wurx_context_t* context, uint8_t* buffer, uint8_t length);
+uint8_t WuR_is_CRC_good(wurx_context_t* context);
+void WuR_process_frame(wurx_context_t* context);
+void WuR_go_sleep(wurx_context_t* wur_context);
+
+#endif

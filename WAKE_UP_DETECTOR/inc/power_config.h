@@ -29,5 +29,7 @@ void SystemPower_Config(void);
   * @retval None
   */
 void SystemPower_ConfigSTOP(void);
+void SystemPower_sleep(void);
+void SystemPower_prepare_sleep(void);
 
 #endif /* POWER_CONFIG_H_ */

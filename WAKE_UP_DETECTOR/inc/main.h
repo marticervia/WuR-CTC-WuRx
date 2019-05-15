@@ -42,27 +42,6 @@
 #include "stm32l0xx_nucleo.h"
 
 //128 bits plus 16 bits of headers and a crc 8
-#define MAX_FRAME_LEN 19
-/* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
-/* Exported macro ------------------------------------------------------------*/
-/* Exported functions ------------------------------------------------------- */
-typedef enum wurx_states{
-	WURX_SLEEP = 0,
-	WURX_WAITING_PREAMBLE = 1,
-	WURX_DECODING_FRAME = 2,
-	WURX_GOING_TO_SLEEP = 3,
-	WURX_HAS_FRAME = 0,
-}wurx_states_t;
-
-typedef struct wurx_context{
-	wurx_states_t wurx_state;
-	uint16_t wurx_address;
-	uint8_t frame_len;
-	uint8_t frame_buffer[MAX_FRAME_LEN];
-}wurx_context_t;
-
-void initWuRContext(wurx_context_t* context);
 
 #endif /* __MAIN_H */
 

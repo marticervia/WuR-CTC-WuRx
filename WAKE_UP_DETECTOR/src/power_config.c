@@ -5,6 +5,7 @@
  *      Author: marti
  */
 #include "power_config.h"
+#include "periph_config.h"
 #include "config_defines.h"
 #include "user_handlers.h"
 #include "stm32l0xx_hal_conf.h"
@@ -119,5 +120,35 @@ void SystemPower_ConfigSTOP(void)
   /* Select HSI as system clock source after Wake Up from Stop mode */
   __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);
 
+}
+
+void SystemPower_prepare_sleep(void){
+
+	PIN_SET(GPIOA, ADDR_OK);
+	PIN_RESET(GPIOA, ADDR_OK);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
+	TIMER_DISABLE(TIM2);
+	CLEAR_TIMER_EXPIRED(TIM2);
+	TIMER_DISABLE(TIM21);
+	CLEAR_TIMER_EXPIRED(TIM21);
+	__TIM2_CLK_DISABLE();
+	__TIM21_CLK_DISABLE();
+
+}
+
+void SystemPower_sleep(void){
+    /* shut down indicator */
+
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
+	pinModeSleep();
+    HAL_SuspendTick();
+    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+    HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
+    HAL_ResumeTick();
+    /* restart indicator */
+	pinModeAwake();
+    PIN_SET(GPIOA, WAKE_UP_FAST);
+    /* Configures system clock after wake-up from STOP*/
+    SystemPower_ConfigSTOP();
 }
 

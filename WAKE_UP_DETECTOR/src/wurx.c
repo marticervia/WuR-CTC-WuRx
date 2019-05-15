@@ -81,7 +81,8 @@ uint8_t WuR_is_CRC_good(wurx_context_t* context){
 	uint16_t i;
 	uint8_t crc_num = 0;
 
-	for (i=0; i < context->frame_len; i++){
+	/* do not CRC the CRC!*/
+	for (i=0; i < context->frame_len -1; i++){
 		crc_num = CRC_8_TABLE[crc_num ^ context->frame_buffer[i]];
 	}
 
@@ -119,7 +120,7 @@ void WuR_process_frame(wurx_context_t* context){
 	/* finish waiting for preamble start */
 	while(!IS_TIMER_EXPIRED(TIM2));
 	/* arm sample timer */
-	TIMER_SET_PERIOD(TIM2, 64);
+	TIMER_SET_PERIOD(TIM2, 63);
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 

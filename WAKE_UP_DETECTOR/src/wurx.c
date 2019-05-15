@@ -30,7 +30,6 @@ static const uint8_t CRC_8_TABLE[256] =
 };
 
 static uint16_t expected_preamble[4] = {INPUT_FAST, INPUT_FAST, 0, INPUT_FAST};
-static uint16_t expected_addr[16] = {0,INPUT_FAST,0,INPUT_FAST,0,0,INPUT_FAST,INPUT_FAST,0,0,0,0,INPUT_FAST,INPUT_FAST,INPUT_FAST,INPUT_FAST};
 
 /* the length of the output array must be at least 12!*/
 void WuR_set_hex_addr(uint16_t input_addr, wurx_context_t* context){
@@ -105,92 +104,125 @@ void WuR_process_frame(wurx_context_t* context){
 	uint8_t offset = 0;
 	uint8_t length = 0;
 
-	/*wait 100 mullis for operation completition */
+	/*wait 64.25 us for operation completition */
 	context->wurx_state = WURX_DECODING_FRAME;
-	__TIM2_CLK_ENABLE();
-	CLEAR_TIMER_EXPIRED(TIM2);
-	/* wait 100 us for preamble init.*/
-	PIN_SET(GPIOA, WAKE_UP_FAST);
 
-	TIMER_SET_PERIOD(TIM2, 1060);
+
+	/* wait for preamble init.*/
+	__TIM2_CLK_ENABLE();
+	/* block for 60 us @ 16 ticks x us*/
+	TIMER_SET_PERIOD(TIM2, 836);
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_ENABLE(TIM2);
 
 	/* finish waiting for preamble start */
 	while(!IS_TIMER_EXPIRED(TIM2));
-
-	TIMER_DISABLE(TIM2);
+	/* arm sample timer */
+	TIMER_SET_PERIOD(TIM2, 64);
+	TIMER_COMMIT_UPDATE(TIM2);
+	CLEAR_TIMER_EXPIRED(TIM2);
 
 	/* match preamble!*/
 	for(loop = 0; loop < PREAMBLE_LEN; loop++){
+		while(!IS_TIMER_EXPIRED(TIM2));
 		result = READ_PIN(GPIOA, INPUT_FAST);
+		CLEAR_TIMER_EXPIRED(TIM2);
+		PIN_SET(GPIOA, ADDR_OK);
+		PIN_RESET(GPIOA, ADDR_OK);
+
 		if(result != expected_preamble[loop]){
+			PIN_SET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, ADDR_OK);
+			PIN_SET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, ADDR_OK);
 			return;
 		}
+
 		// 12 instructions used, 52 cycles left still to do crazy shit
-		ADJUST_WITH_NOPS;
 	}
 
 	/* match address!*/
 	//64 instructions loop at 16MHz
 	for(loop = 0; loop < ADDR_LEN; loop++){
+		while(!IS_TIMER_EXPIRED(TIM2));
 		result = READ_PIN(GPIOA, INPUT_FAST);
-		if(result != expected_addr[loop]){
+		CLEAR_TIMER_EXPIRED(TIM2);
+		PIN_SET(GPIOA, ADDR_OK);
+		PIN_RESET(GPIOA, ADDR_OK);
+		if(result != context->wurx_address[loop]){
+			PIN_SET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, ADDR_OK);
+			PIN_SET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, ADDR_OK);
 			WuR_clear_buffer(context);
 			return;
 		}
+
 		frame_buffer[offset] = (result != 0);
 		offset++;
-		//TODO: Realign!
-		ADJUST_WITH_NOPS;
 	}
 
 	/* now decode frame type, 3 bits */
-	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
-	offset++;
-	//TODO: align this case
-	ADJUST_WITH_NOPS;
 
-	/* now decode frame type, 3 bits */
+	while(!IS_TIMER_EXPIRED(TIM2));
+	CLEAR_TIMER_EXPIRED(TIM2);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
-	offset++;
-	//TODO: align this case
-	ADJUST_WITH_NOPS;
+	PIN_SET(GPIOA, ADDR_OK);
+	PIN_RESET(GPIOA, ADDR_OK);
 
-	/* now decode frame type, 3 bits */
-	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
 	offset++;
-	//TODO: align this case
-	ADJUST_WITH_NOPS;
+
+	while(!IS_TIMER_EXPIRED(TIM2));
+	CLEAR_TIMER_EXPIRED(TIM2);
+	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	PIN_SET(GPIOA, ADDR_OK);
+	PIN_RESET(GPIOA, ADDR_OK);
+
+	offset++;
+
+	while(!IS_TIMER_EXPIRED(TIM2));
+	CLEAR_TIMER_EXPIRED(TIM2);
+	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	PIN_SET(GPIOA, ADDR_OK);
+	PIN_RESET(GPIOA, ADDR_OK);
+
+	offset++;
 
 	/* now decode seq number */
+	while(!IS_TIMER_EXPIRED(TIM2));
+	CLEAR_TIMER_EXPIRED(TIM2);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	PIN_SET(GPIOA, ADDR_OK);
+	PIN_RESET(GPIOA, ADDR_OK);
+
 	offset++;
-	//TODO: align this case
-	ADJUST_WITH_NOPS;
 
 	/* now decode length! */
 
 	for(loop = 0; loop < LENGTH_LEN; loop++){
-		if(READ_PIN(GPIOA, INPUT_FAST)){
-			length |= 1 << loop;
+		while(!IS_TIMER_EXPIRED(TIM2));
+		CLEAR_TIMER_EXPIRED(TIM2);
+		result = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+		if(result){
+			length |= 1 << (7 - loop);
 		}
-		else{
-			//Delay for equal execution time!
-		}
+		PIN_SET(GPIOA, ADDR_OK);
+		PIN_RESET(GPIOA, ADDR_OK);
+
 		frame_buffer[offset] = result;
 		offset++;
-		//TODO: Realign!
-		ADJUST_WITH_NOPS;
 	}
 
 	/* now we have length, read the rest of bits!*/
-	for(loop = 0; loop < LENGTH_LEN; loop++){
+	for(loop = 0; loop < length + 8; loop++){
+		while(!IS_TIMER_EXPIRED(TIM2));
+		CLEAR_TIMER_EXPIRED(TIM2);
+		PIN_SET(GPIOA, ADDR_OK);
+		PIN_RESET(GPIOA, ADDR_OK);
+
 		frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
 		offset++;
-		//TODO: Realign!
-		ADJUST_WITH_NOPS;
 	}
 
 	/* well, now the frame is over, let's just process it */

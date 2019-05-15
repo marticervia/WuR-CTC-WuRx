@@ -108,7 +108,7 @@
 #define TIMER_SET_PERIOD(TIMx, period) (TIMx->ARR = (uint16_t)period)
 #define TIMER_SET_PRESCALER(TIMx, prescaler) (TIMx->PSC = (uint16_t)prescaler)
 #define TIMER_COMMIT_UPDATE(TIMx) (TIMx->EGR = TIM_EGR_UG)
-#define IS_TIMER_EXPIRED(TIMx) ((TIMx->SR &(TIM_FLAG_UPDATE)) == (TIM_FLAG_UPDATE))
+#define IS_TIMER_EXPIRED(TIMx) ((TIMx->SR & (TIM_FLAG_UPDATE)))
 #define CLEAR_TIMER_EXPIRED(TIMx) (TIMx->SR &= ~(TIM_FLAG_UPDATE))
 
 

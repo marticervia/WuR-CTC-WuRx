@@ -141,7 +141,6 @@ void SystemPower_sleep(void){
 	pinModeSleep();
     HAL_SuspendTick();
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-    HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
     HAL_ResumeTick();
     /* restart indicator */
 	pinModeAwake();

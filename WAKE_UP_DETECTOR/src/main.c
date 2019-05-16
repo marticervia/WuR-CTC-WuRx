@@ -11,7 +11,7 @@ TIM_HandleTypeDef  timeout_timer;
 
 I2C_HandleTypeDef I2cHandle;
 
-volatile uint8_t I2C_operation = 0;
+static volatile uint8_t I2C_operation = 0, WuR_operation = 0;
 
 /**
 * @brief  Main program
@@ -26,17 +26,18 @@ static void loopMain(wurx_context_t* context){
 		/* this one blocks until MCU wakes*/
 		SystemPower_sleep();
 		/* one awaken,. check is we woke cause of a WuR frame or an I2C transmission req*/
-		if(I2C_operation){
-			/* clear I2C OP flag*/
-			I2C_operation = 0;
-			/*keep awake 10ms to let the host perform I2C operations*/
-			HAL_Delay(10);
-			continue;
-		}else{
+
+		if(WuR_operation){
 			/* process WuR frame*/
 			WuR_process_frame(context);
 			/* cleanup HW used by WuR*/
 			WuR_go_sleep(context);
+			WuR_operation = 0;
+		}
+		if(I2C_operation){
+			/*keep awake 10ms to let the host perform I2C operations*/
+			HAL_Delay(10);
+			I2C_operation = 0;
 		}
 	}
 }
@@ -48,6 +49,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	  /* flag the start of an I2C operation */
 	  I2C_operation = 1;
   }
+}
+
+void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
+	  /* Clear Wake Up Flag */
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+	  WuR_operation = 1;
 }
 
 int main(void)

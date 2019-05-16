@@ -109,15 +109,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }
 
-#else
-void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
-	  /* Clear Wake Up Flag */
-#ifndef BUSY_WAIT
-	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-#else
-	intr_flag = 1;
-#endif
-}
 #endif
 
 /**

@@ -105,6 +105,9 @@ void WuR_process_frame(wurx_context_t* context){
 	uint8_t offset = 0;
 	uint8_t length = 0;
 
+	if(context->wurx_state == WURX_HAS_FRAME){
+		return;
+	}
 	/*wait 64.25 us for operation completition */
 	context->wurx_state = WURX_DECODING_FRAME;
 
@@ -112,7 +115,7 @@ void WuR_process_frame(wurx_context_t* context){
 	/* wait for preamble init.*/
 	__TIM2_CLK_ENABLE();
 	/* block for 60 us @ 16 ticks x us*/
-	TIMER_SET_PERIOD(TIM2, 836);
+	TIMER_SET_PERIOD(TIM2, 842);
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_ENABLE(TIM2);

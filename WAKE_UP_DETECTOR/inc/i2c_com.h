@@ -42,8 +42,7 @@ typedef enum i2c_registers{
 	I2C_NONE_REGISTER = 0,
 	I2C_STATUS_REGISTER = 1,
 	I2C_ADDR_REGISTER = 2,
-	I2C_FRAME_REGISTER = 3,
-	I2C_FRAME_READY_REGISTER = 4
+	I2C_FRAME_REGISTER = 3
 }i2c_registers_t;
 
 typedef enum i2c_state{

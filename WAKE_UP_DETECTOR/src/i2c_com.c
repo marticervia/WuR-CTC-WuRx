@@ -98,7 +98,7 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 						}
 					}
 					break;
-				case I2C_FRAME_READY_REGISTER:
+				case I2C_FRAME_REGISTER:
 					if(operation_id == I2C_WRITE_OP){
 						//write is not supported on this register
 						reset_i2c_state(I2cHandle);
@@ -163,10 +163,9 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 				return;
 			}
 			switch(i2c_context.i2c_last_reg){
-				case I2C_FRAME_READY_REGISTER:
+				case I2C_FRAME_REGISTER:
 					/* as frame has been read, we can flush it and reset the start of the machine*/
 					WuR_init_context((wurx_context_t*)wur_context);
-					reset_i2c_state(I2cHandle);
 					break;
 				default:
 					break;

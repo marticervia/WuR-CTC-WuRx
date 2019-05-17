@@ -13,7 +13,7 @@
 #define LEN_WUR_FRAME 8
 #define MAX_LEN_DATA_FRAME 128
 
-#define MAX_FRAME_LEN 19
+#define MAX_FRAME_LEN 20
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/

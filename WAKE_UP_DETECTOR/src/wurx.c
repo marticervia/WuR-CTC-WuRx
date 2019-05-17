@@ -99,10 +99,10 @@ void WuR_go_sleep(wurx_context_t* wur_context){
 }
 
 void WuR_process_frame(wurx_context_t* context){
-	uint8_t frame_buffer[160] = {0};
+	uint8_t frame_buffer[200] = {0};
 	uint32_t result = 0;
 	uint8_t loop = 0;
-	uint8_t offset = 0;
+	uint16_t offset = 0;
 	uint8_t length = 0;
 
 	if(context->wurx_state == WURX_HAS_FRAME){
@@ -115,7 +115,7 @@ void WuR_process_frame(wurx_context_t* context){
 	/* wait for preamble init.*/
 	__TIM2_CLK_ENABLE();
 	/* block for 60 us @ 16 ticks x us*/
-	TIMER_SET_PERIOD(TIM2, 842);
+	TIMER_SET_PERIOD(TIM2, 808);
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_ENABLE(TIM2);

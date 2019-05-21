@@ -18,7 +18,6 @@ static volatile uint8_t I2C_operation = 0, WuR_operation = 0;
 * @param  None
 * @retval None
 */
-
 static void loopMain(wurx_context_t* context){
 
 	while (1)

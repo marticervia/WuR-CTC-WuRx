@@ -256,8 +256,12 @@ void pinModeinit(void){
 
 void pinModeSleep(void){
     HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
+    HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
+
 }
 
 void pinModeAwake(void){
     HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
+    HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
+
 }

@@ -61,12 +61,13 @@ void SystemPower_Config(void)
 	  System_Error_Handler();
 	}
 
-  /* Enable Ultra low power mode */
-  HAL_PWREx_EnableUltraLowPower();
+	/* Enable Ultra low power mode */
+	HAL_PWREx_EnableUltraLowPower();
 
-  /* Enable the fast wake up from Ultra low power mode */
-  HAL_PWREx_EnableFastWakeUp();
-  /* Select HSI as system clock source after Wake Up from Stop mode */
+	/* Enable the fast wake up from Ultra low power mode */
+	HAL_PWREx_EnableFastWakeUp();
+	/* Select HSI as system clock source after Wake Up from Stop mode */
+	__HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);
 }
 
 
@@ -78,11 +79,11 @@ void SystemPower_Config(void)
   */
 void SystemPower_ConfigSTOP(void)
 {
-	RCC_ClkInitTypeDef RCC_ClkInitStruct;
 	RCC_OscInitTypeDef RCC_OscInitStruct;
 
 	/* Enable Power Control clock */
 	__HAL_RCC_PWR_CLK_ENABLE();
+    __HAL_RCC_HSI_CALIBRATIONVALUE_ADJUST(0x0E);
 
 	/* The voltage scaling allows optimizing the power consumption when the device is
 	 clocked below the maximum system frequency, to update the voltage scaling value
@@ -102,23 +103,6 @@ void SystemPower_ConfigSTOP(void)
 	{
 	  System_Error_Handler();
 	}
-
-  /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
-	 clocks dividers */
-	RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-	if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
-	{
-	  System_Error_Handler();
-	}
-
-  HAL_PWREx_EnableUltraLowPower();
-  HAL_PWREx_EnableFastWakeUp();
-  /* Select HSI as system clock source after Wake Up from Stop mode */
-  __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);
 
 }
 
@@ -140,7 +124,7 @@ void SystemPower_sleep(void){
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	pinModeSleep();
     HAL_SuspendTick();
-    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFE);
     HAL_ResumeTick();
     /* restart indicator */
 	pinModeAwake();

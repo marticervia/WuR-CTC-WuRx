@@ -4,7 +4,7 @@
 
 #define DEFAULT_ADDRESS 0x0555
 
-#define PREAMBLE_LEN 4
+#define PREAMBLE_LEN 2
 #define ADDR_LEN 12
 #define FLAGS_LEN 4
 #define LENGTH_LEN 8

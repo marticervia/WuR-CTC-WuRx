@@ -29,7 +29,7 @@ static const uint8_t CRC_8_TABLE[256] =
 	116, 42,200,150, 21, 75,169,247,182,232, 10, 84,215,137,107, 53
 };
 
-static uint16_t expected_preamble[4] = {INPUT_FAST, INPUT_FAST, 0, INPUT_FAST};
+static uint16_t expected_preamble[PREAMBLE_LEN] = {INPUT_FAST, INPUT_FAST};
 
 /* the length of the output array must be at least 12!*/
 void WuR_set_hex_addr(uint16_t input_addr, wurx_context_t* context){
@@ -54,6 +54,7 @@ uint16_t WuR_get_hex_addr(wurx_context_t* context){
 
 void WuR_clear_buffer(wurx_context_t* context){
 	memset(context->frame_buffer, 0, MAX_FRAME_LEN);
+	context->frame_len = 0;
 }
 
 
@@ -91,19 +92,25 @@ uint8_t WuR_is_CRC_good(wurx_context_t* context){
 
 void WuR_go_sleep(wurx_context_t* wur_context){
 
+    HAL_ResumeTick();
+
 	if(wur_context->wurx_state != WURX_HAS_FRAME){
 		wur_context->wurx_state = WURX_SLEEP;
+		wur_context->frame_len = 0;
 	}
-
 	SystemPower_prepare_sleep();
 }
 
+/* initialization not really required */
+static uint8_t frame_buffer[200] = {0};
+
 void WuR_process_frame(wurx_context_t* context){
-	uint8_t frame_buffer[200] = {0};
 	uint32_t result = 0;
 	uint8_t loop = 0;
 	uint16_t offset = 0;
 	uint8_t length = 0;
+
+    HAL_SuspendTick();
 
 	if(context->wurx_state == WURX_HAS_FRAME){
 		return;
@@ -115,7 +122,7 @@ void WuR_process_frame(wurx_context_t* context){
 	/* wait for preamble init.*/
 	__TIM2_CLK_ENABLE();
 	/* block for 60 us @ 16 ticks x us*/
-	TIMER_SET_PERIOD(TIM2, 808);
+	TIMER_SET_PERIOD(TIM2, 336);
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_ENABLE(TIM2);
@@ -143,7 +150,6 @@ void WuR_process_frame(wurx_context_t* context){
 			return;
 		}
 
-		// 12 instructions used, 52 cycles left still to do crazy shit
 	}
 
 	/* match address!*/

@@ -225,7 +225,7 @@ void WuR_process_frame(wurx_context_t* context){
 	}
 
 	/* now we have length, read the rest of bits!*/
-	for(loop = 0; loop < length + 8; loop++){
+	for(loop = 0; loop < (length*8) + 8; loop++){
 		while(!IS_TIMER_EXPIRED(TIM2));
 		CLEAR_TIMER_EXPIRED(TIM2);
 		PIN_SET(GPIOA, ADDR_OK);

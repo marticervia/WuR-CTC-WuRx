@@ -122,7 +122,7 @@ void WuR_process_frame(wurx_context_t* context){
 	/* wait for preamble init.*/
 	__TIM2_CLK_ENABLE();
 	/* block for 60 us @ 16 ticks x us*/
-	TIMER_SET_PERIOD(TIM2, 336);
+	TIMER_SET_PERIOD(TIM2, 272);
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_ENABLE(TIM2);
@@ -139,8 +139,6 @@ void WuR_process_frame(wurx_context_t* context){
 		while(!IS_TIMER_EXPIRED(TIM2));
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		CLEAR_TIMER_EXPIRED(TIM2);
-		PIN_SET(GPIOA, ADDR_OK);
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		if(result != expected_preamble[loop]){
 			PIN_SET(GPIOA, ADDR_OK);
@@ -149,7 +147,6 @@ void WuR_process_frame(wurx_context_t* context){
 			PIN_RESET(GPIOA, ADDR_OK);
 			return;
 		}
-
 	}
 
 	/* match address!*/
@@ -158,8 +155,6 @@ void WuR_process_frame(wurx_context_t* context){
 		while(!IS_TIMER_EXPIRED(TIM2));
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		CLEAR_TIMER_EXPIRED(TIM2);
-		PIN_SET(GPIOA, ADDR_OK);
-		PIN_RESET(GPIOA, ADDR_OK);
 		if(result != context->wurx_address[loop]){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
@@ -178,24 +173,18 @@ void WuR_process_frame(wurx_context_t* context){
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
-	PIN_SET(GPIOA, ADDR_OK);
-	PIN_RESET(GPIOA, ADDR_OK);
 
 	offset++;
 
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
-	PIN_SET(GPIOA, ADDR_OK);
-	PIN_RESET(GPIOA, ADDR_OK);
 
 	offset++;
 
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
-	PIN_SET(GPIOA, ADDR_OK);
-	PIN_RESET(GPIOA, ADDR_OK);
 
 	offset++;
 
@@ -203,8 +192,6 @@ void WuR_process_frame(wurx_context_t* context){
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
-	PIN_SET(GPIOA, ADDR_OK);
-	PIN_RESET(GPIOA, ADDR_OK);
 
 	offset++;
 
@@ -217,8 +204,6 @@ void WuR_process_frame(wurx_context_t* context){
 		if(result){
 			length |= 1 << (7 - loop);
 		}
-		PIN_SET(GPIOA, ADDR_OK);
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		frame_buffer[offset] = result;
 		offset++;
@@ -228,8 +213,6 @@ void WuR_process_frame(wurx_context_t* context){
 	for(loop = 0; loop < (length*8) + 8; loop++){
 		while(!IS_TIMER_EXPIRED(TIM2));
 		CLEAR_TIMER_EXPIRED(TIM2);
-		PIN_SET(GPIOA, ADDR_OK);
-		PIN_RESET(GPIOA, ADDR_OK);
 
 		frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
 		offset++;
@@ -248,6 +231,7 @@ void WuR_process_frame(wurx_context_t* context){
 
 	/* notify host that we have a frame ready via interrupt and change state accordingly*/
 	PIN_SET(GPIOA, ADDR_OK);
+	ADJUST_WITH_NOPS;
 	ADJUST_WITH_NOPS;
 	PIN_RESET(GPIOA, ADDR_OK);
 

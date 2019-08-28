@@ -130,7 +130,8 @@
 #define I2Cx_SCL_SDA_AF                 GPIO_AF4_I2C1
 #define I2C_ADDRESS        				0x28
 
-#define I2C_TIMING      				0x00A04D53 /* 100 kHz with analog Filter ON. */
+//#define I2C_TIMING      				0x00A04D53 /* 100 kHz with analog Filter ON. */
+#define I2C_TIMING      				0x00000000 /* 400 kHz with analog Filter ON. */
 
 /* Definition for I2Cx's NVIC */
 #define I2Cx_IRQn                       I2C1_IRQn

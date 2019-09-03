@@ -40,6 +40,7 @@ typedef struct wurx_context{
 #define APPLY_ADDR_MASK(addr) (addr & 0x0FFF)
 
 void WuR_init_context(wurx_context_t* context);
+void WuR_clear_context(wurx_context_t* context);
 void WuR_clear_buffer(wurx_context_t* context);
 void WuR_set_frame_buffer(wurx_context_t* context, uint8_t* buffer, uint8_t length);
 uint8_t WuR_is_CRC_good(wurx_context_t* context);

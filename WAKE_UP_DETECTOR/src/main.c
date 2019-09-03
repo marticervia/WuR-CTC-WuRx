@@ -35,7 +35,7 @@ static void loopMain(wurx_context_t* context){
 		}
 		if(I2C_operation){
 			/*keep awake 10ms to let the host perform I2C operations*/
-			HAL_Delay(10);
+			HAL_Delay(2);
 			I2C_operation = 0;
 		}
 	}

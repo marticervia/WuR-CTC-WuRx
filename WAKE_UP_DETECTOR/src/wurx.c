@@ -57,13 +57,18 @@ void WuR_clear_buffer(wurx_context_t* context){
 	context->frame_len = 0;
 }
 
-
-void WuR_init_context(wurx_context_t* context){
+void WuR_clear_context(wurx_context_t* context){
 	context->wurx_state = WURX_SLEEP;
-	WuR_set_hex_addr(DEFAULT_ADDRESS, context);
 	memset(context->frame_buffer, 0, MAX_FRAME_LEN);
 	context->frame_len = 0;
 }
+
+
+void WuR_init_context(wurx_context_t* context){
+	WuR_clear_context(context);
+	WuR_set_hex_addr(DEFAULT_ADDRESS, context);
+}
+
 
 void WuR_set_frame_buffer(wurx_context_t* context, uint8_t* buffer, uint8_t length){
 	uint8_t num_byte_loops = length/8;
@@ -122,10 +127,11 @@ void WuR_process_frame(wurx_context_t* context){
 	/* wait for preamble init.*/
 	__TIM2_CLK_ENABLE();
 	/* block for 60 us @ 16 ticks x us*/
-	TIMER_SET_PERIOD(TIM2, 272);
+	TIMER_SET_PERIOD(TIM2, 270);
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_ENABLE(TIM2);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
 
 	/* finish waiting for preamble start */
 	while(!IS_TIMER_EXPIRED(TIM2));
@@ -137,6 +143,8 @@ void WuR_process_frame(wurx_context_t* context){
 	/* match preamble!*/
 	for(loop = 0; loop < PREAMBLE_LEN; loop++){
 		while(!IS_TIMER_EXPIRED(TIM2));
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		CLEAR_TIMER_EXPIRED(TIM2);
 
@@ -153,9 +161,13 @@ void WuR_process_frame(wurx_context_t* context){
 	//64 instructions loop at 16MHz
 	for(loop = 0; loop < ADDR_LEN; loop++){
 		while(!IS_TIMER_EXPIRED(TIM2));
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
 		result = READ_PIN(GPIOA, INPUT_FAST);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		if(result != context->wurx_address[loop]){
+			PIN_SET(GPIOA, ADDR_OK);
+			PIN_RESET(GPIOA, ADDR_OK);
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
 			PIN_SET(GPIOA, ADDR_OK);
@@ -171,27 +183,35 @@ void WuR_process_frame(wurx_context_t* context){
 	/* now decode frame type, 3 bits */
 
 	while(!IS_TIMER_EXPIRED(TIM2));
-	CLEAR_TIMER_EXPIRED(TIM2);
+	PIN_SET(GPIOA, WAKE_UP_FAST);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	CLEAR_TIMER_EXPIRED(TIM2);
 
 	offset++;
 
 	while(!IS_TIMER_EXPIRED(TIM2));
-	CLEAR_TIMER_EXPIRED(TIM2);
+	PIN_SET(GPIOA, WAKE_UP_FAST);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	CLEAR_TIMER_EXPIRED(TIM2);
 
 	offset++;
 
 	while(!IS_TIMER_EXPIRED(TIM2));
-	CLEAR_TIMER_EXPIRED(TIM2);
+	PIN_SET(GPIOA, WAKE_UP_FAST);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	CLEAR_TIMER_EXPIRED(TIM2);
 
 	offset++;
 
 	/* now decode seq number */
 	while(!IS_TIMER_EXPIRED(TIM2));
-	CLEAR_TIMER_EXPIRED(TIM2);
+	PIN_SET(GPIOA, WAKE_UP_FAST);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	CLEAR_TIMER_EXPIRED(TIM2);
 
 	offset++;
 
@@ -199,8 +219,11 @@ void WuR_process_frame(wurx_context_t* context){
 
 	for(loop = 0; loop < LENGTH_LEN; loop++){
 		while(!IS_TIMER_EXPIRED(TIM2));
-		CLEAR_TIMER_EXPIRED(TIM2);
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
 		result = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+		CLEAR_TIMER_EXPIRED(TIM2);
+
 		if(result){
 			length |= 1 << (7 - loop);
 		}
@@ -212,9 +235,11 @@ void WuR_process_frame(wurx_context_t* context){
 	/* now we have length, read the rest of bits!*/
 	for(loop = 0; loop < (length*8) + 8; loop++){
 		while(!IS_TIMER_EXPIRED(TIM2));
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+		frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
 		CLEAR_TIMER_EXPIRED(TIM2);
 
-		frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
 		offset++;
 	}
 
@@ -225,6 +250,14 @@ void WuR_process_frame(wurx_context_t* context){
 
 	/* is CRC ok? */
 	if(!WuR_is_CRC_good(context)){
+		PIN_SET(GPIOA, ADDR_OK);
+		PIN_RESET(GPIOA, ADDR_OK);
+		PIN_SET(GPIOA, ADDR_OK);
+		PIN_RESET(GPIOA, ADDR_OK);
+		PIN_SET(GPIOA, ADDR_OK);
+		PIN_RESET(GPIOA, ADDR_OK);
+		PIN_SET(GPIOA, ADDR_OK);
+		PIN_RESET(GPIOA, ADDR_OK);
 		WuR_clear_buffer(context);
 		return;
 	}

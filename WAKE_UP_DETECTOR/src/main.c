@@ -13,30 +13,85 @@ I2C_HandleTypeDef I2cHandle;
 
 static volatile uint8_t I2C_operation = 0, WuR_operation = 0;
 
+typedef enum wurx_status{
+	WUR_SLEEPING,
+	WUR_WAIT_DATA,
+	WUR_WAIT_I2C
+}wurx_status_t;
+
+typedef struct wurx_ctxt{
+	wurx_status_t wurx_status;
+	uint32_t	  wurx_timestamp;
+}wurx_ctxt_t;
+
 /**
 * @brief  Main program
 * @param  None
 * @retval None
 */
+
+static wurx_ctxt_t wurx_ctxt = {
+		.wurx_status = WUR_SLEEPING,
+		.wurx_timestamp = 0
+};
+
 static void loopMain(wurx_context_t* context){
+	uint16_t wake_ms;
+	uint32_t current_tick;
 
 	while (1)
 	{
-		/* this one blocks until MCU wakes*/
-		SystemPower_sleep();
-		/* one awaken,. check is we woke cause of a WuR frame or an I2C transmission req*/
-
-		if(WuR_operation){
-			/* process WuR frame*/
-			WuR_process_frame(context);
-			/* cleanup HW used by WuR*/
-			WuR_go_sleep(context);
-			WuR_operation = 0;
-		}
-		if(I2C_operation){
-			/*keep awake 10ms to let the host perform I2C operations*/
-			HAL_Delay(2);
-			I2C_operation = 0;
+		switch(wurx_ctxt.wurx_status){
+			case WUR_SLEEPING:
+				WuR_go_sleep(context);
+				/* configure on wakeup for HSI use*/
+				SystemPower_sleep();
+				if(WuR_operation){
+					wake_ms = WuR_process_frame(context, 1);
+					WuR_operation = 0;
+					if(!wake_ms){
+						break;
+					}
+					/* activate HSE for use*/
+					SystemPower_data();
+					wurx_ctxt.wurx_timestamp = HAL_GetTick() + wake_ms;
+					wurx_ctxt.wurx_status = WUR_WAIT_DATA;
+				}else if(I2C_operation){
+					I2C_operation = 0;
+					wurx_ctxt.wurx_timestamp = HAL_GetTick() + 10;
+					wurx_ctxt.wurx_status = WUR_WAIT_I2C;
+				}
+				break;
+			case WUR_WAIT_DATA:
+				current_tick = HAL_GetTick();
+				/* activate again the reception interrupt*/
+				pinModeWaitFrame();
+				/* loop used inside the state to minimize jitter*/
+				while(current_tick < wurx_ctxt.wurx_timestamp){
+					if(WuR_operation){
+					    PIN_SET(GPIOA, WAKE_UP_FAST);
+						pinModeFrameReceived();
+						PIN_RESET(GPIOA, WAKE_UP_FAST);
+					    WuR_process_frame(context, 0);
+						pinModeWaitFrame();
+						WuR_operation = 0;
+					}
+					current_tick = HAL_GetTick();
+				}
+				/* deactivate HSE and return to the default clock config with HSI*/
+				SystemPower_wake();
+				wurx_ctxt.wurx_status = WUR_SLEEPING;
+				break;
+			case WUR_WAIT_I2C:
+				current_tick = HAL_GetTick();
+				while(current_tick < wurx_ctxt.wurx_timestamp){
+					HAL_Delay(10);
+					break;
+				}
+				wurx_ctxt.wurx_status = WUR_SLEEPING;
+				break;
+			default:
+				wurx_ctxt.wurx_status = WUR_SLEEPING;
 		}
 	}
 }
@@ -64,13 +119,12 @@ int main(void)
 
 	HAL_Init();
 
-	/* Configure the system Power */
-	SystemPower_Config();
+	/* Configure the system Power for HSI use */
+	Initial_SystemPower_Config();
 	i2CConfig(&context, &I2cHandle);
 	pinModeinit();
 	TIMER_Config();
 	COMP_Config(&hcomp1);
-	//first test if I2C is working, just by default.
 
 	loopMain(&context);
 

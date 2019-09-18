@@ -20,7 +20,7 @@
   * @param  None
   * @retval None
   */
-void SystemPower_Config(void);
+void Initial_SystemPower_Config(void);
 
 /**
   * @brief  Configures system clock after wake-up from STOP: enable HSI, PLL
@@ -31,5 +31,7 @@ void SystemPower_Config(void);
 void SystemPower_ConfigSTOP(void);
 void SystemPower_sleep(void);
 void SystemPower_prepare_sleep(void);
+void SystemPower_data(void);
+void SystemPower_wake(void);
 
 #endif /* POWER_CONFIG_H_ */

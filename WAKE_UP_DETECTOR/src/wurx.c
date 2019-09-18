@@ -109,28 +109,33 @@ void WuR_go_sleep(wurx_context_t* wur_context){
 /* initialization not really required */
 static uint8_t frame_buffer[200] = {0};
 
-void WuR_process_frame(wurx_context_t* context){
+uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	uint32_t result = 0;
 	uint8_t loop = 0;
-	uint16_t offset = 0;
+	uint16_t offset = 0, wake_ms = 0;
 	uint8_t length = 0;
 
     HAL_SuspendTick();
 
 	if(context->wurx_state == WURX_HAS_FRAME){
-		return;
+	    HAL_ResumeTick();
+		return 0;
 	}
 	/*wait 64.25 us for operation completition */
 	context->wurx_state = WURX_DECODING_FRAME;
 
-
 	/* wait for preamble init.*/
 	__TIM2_CLK_ENABLE();
 	/* block for 60 us @ 16 ticks x us*/
-	TIMER_SET_PERIOD(TIM2, 270);
+	if(from_sleep){
+		TIMER_SET_PERIOD(TIM2, 190);
+	}else{
+		TIMER_SET_PERIOD(TIM2, 608);
+	}
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_ENABLE(TIM2);
+	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 
 	/* finish waiting for preamble start */
@@ -139,6 +144,12 @@ void WuR_process_frame(wurx_context_t* context){
 	TIMER_SET_PERIOD(TIM2, 63);
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
+
+	PIN_SET(GPIOA, WAKE_UP_FAST);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
+	PIN_SET(GPIOA, WAKE_UP_FAST);
+	PIN_RESET(GPIOA, WAKE_UP_FAST);
+
 
 	/* match preamble!*/
 	for(loop = 0; loop < PREAMBLE_LEN; loop++){
@@ -153,7 +164,8 @@ void WuR_process_frame(wurx_context_t* context){
 			PIN_RESET(GPIOA, ADDR_OK);
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
-			return;
+		    HAL_ResumeTick();
+			return 0;
 		}
 	}
 
@@ -173,7 +185,8 @@ void WuR_process_frame(wurx_context_t* context){
 			PIN_SET(GPIOA, ADDR_OK);
 			PIN_RESET(GPIOA, ADDR_OK);
 			WuR_clear_buffer(context);
-			return;
+		    HAL_ResumeTick();
+			return 0;
 		}
 
 		frame_buffer[offset] = (result != 0);
@@ -239,7 +252,6 @@ void WuR_process_frame(wurx_context_t* context){
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
 		frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
 		CLEAR_TIMER_EXPIRED(TIM2);
-
 		offset++;
 	}
 
@@ -259,7 +271,13 @@ void WuR_process_frame(wurx_context_t* context){
 		PIN_SET(GPIOA, ADDR_OK);
 		PIN_RESET(GPIOA, ADDR_OK);
 		WuR_clear_buffer(context);
-		return;
+	    HAL_ResumeTick();
+		return 0;
+	}
+
+	if(length >= 2){
+		memcpy(&wake_ms, &context->frame_buffer[WUR_DATA_OFFSET_BYTES], 2);
+		wake_ms = ntohs(wake_ms);
 	}
 
 	/* notify host that we have a frame ready via interrupt and change state accordingly*/
@@ -269,6 +287,8 @@ void WuR_process_frame(wurx_context_t* context){
 	PIN_RESET(GPIOA, ADDR_OK);
 
 	context->wurx_state = WURX_HAS_FRAME;
+    HAL_ResumeTick();
+	return wake_ms;
 
 }
 

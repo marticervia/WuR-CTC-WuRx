@@ -140,8 +140,8 @@
 void COMP_Config(COMP_HandleTypeDef* hcomp1);
 void TIMER_Config();
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp);
-void pinModeSleep(void);
-void pinModeAwake(void);
+void pinModeWaitFrame(void);
+void pinModeFrameReceived(void);
 void pinModeinit(void);
 
 #endif /* PERIPH_CONFIG_H_ */

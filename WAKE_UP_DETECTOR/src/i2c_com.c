@@ -215,7 +215,7 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *I2cHandle)
     */
   if (HAL_I2C_GetError(I2cHandle) != HAL_I2C_ERROR_AF)
   {
-	  System_Error_Handler();
+	  //System_Error_Handler();
   }
   i2c_state_machine(I2C_ERROR, I2cHandle);
 }

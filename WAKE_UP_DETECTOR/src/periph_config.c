@@ -121,6 +121,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   */
 
 void TIMER_Config(){
+
 	__TIM2_CLK_ENABLE();
 	TIMER_SET_COUNTING_MODE(TIM2, TIM_COUNTERMODE_UP);
 	TIMER_SET_CLOCK_DIVISOR(TIM2, TIM_CLOCKDIVISION_DIV1);
@@ -129,13 +130,6 @@ void TIMER_Config(){
 	TIMER_COMMIT_UPDATE(TIM2);
 	__TIM2_CLK_DISABLE();
 
-	__TIM21_CLK_ENABLE();
-	TIMER_SET_COUNTING_MODE(TIM21, TIM_COUNTERMODE_UP);
-	TIMER_SET_CLOCK_DIVISOR(TIM21, TIM_CLOCKDIVISION_DIV1);
-	TIMER_SET_PERIOD(TIM21, 63);
-	TIMER_SET_PRESCALER(TIM21, 0);
-	TIMER_COMMIT_UPDATE(TIM21);
-	__TIM21_CLK_DISABLE();
 }
 
 void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c)
@@ -254,13 +248,13 @@ void pinModeinit(void){
 	  __HAL_RCC_GPIOH_CLK_DISABLE();
 }
 
-void pinModeSleep(void){
+void pinModeWaitFrame(void){
     HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
     HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 }
 
-void pinModeAwake(void){
+void pinModeFrameReceived(void){
     HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
     HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
 

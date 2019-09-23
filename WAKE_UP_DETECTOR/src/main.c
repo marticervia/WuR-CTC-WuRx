@@ -1,179 +1,131 @@
-/**
-  ******************************************************************************
-  * @file    PWR/PWR_STOP/Src/main.c
-  * @author  MCD Application Team
-  * @brief   This sample code shows how to use STM32L0xx PWR HAL API to enter
-  * and exit the stop mode without RTC.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
-  *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************
-  */
-
-/* Includes ------------------------------------------------------------------*/
 #include <periph_config.h>
-#include "main.h"
-#include <string.h>
 #include "stm32l0xx_hal_conf.h"
 #include "user_handlers.h"
 #include "config_defines.h"
 #include "power_config.h"
-
+#include "i2c_com.h"
+#include "wurx.h"
 
 COMP_HandleTypeDef hcomp1;
 TIM_HandleTypeDef  timeout_timer;
 
-/** @addtogroup STM32L0xx_HAL_Examples
-  * @{
-  */
+I2C_HandleTypeDef I2cHandle;
 
-/** @addtogroup PWR_STOP
-  * @{
-  */
+static volatile uint8_t I2C_operation = 0, WuR_operation = 0;
 
-/* Private typedef -----------------------------------------------------------*/
-typedef enum wurx_states{
-	WURX_SLEEP = 0,
-	WURX_WAITING_PREAMBLE = 1,
-	WURX_DECODING_PREAMBLE = 2,
-	WURX_DECODING_PAYLOAD = 3,
-	WURX_GOING_TO_SLEEP = 4,
-}wurx_states_t;
+typedef enum wurx_status{
+	WUR_SLEEPING,
+	WUR_WAIT_DATA,
+	WUR_WAIT_I2C
+}wurx_status_t;
 
-typedef struct wurx_context{
-	wurx_states_t wurx_state;
-	uint16_t wurx_address;
-}wurx_context_t;
-
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-static volatile uint32_t timer_timeout = 0;
-/* Private function prototypes -----------------------------------------------*/
-
-/* Private functions ---------------------------------------------------------*/
-
-
-static void sleepMCU(void){
-    /* shut down indicator */
-	PIN_RESET(GPIOA, WAKE_UP_FAST);
-	pinModeSleep();
-    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-    /* restart indicator */
-	pinModeAwake();
-    PIN_SET(GPIOA, WAKE_UP_FAST);
-}
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  /* Set timeout flag */
-	timer_timeout++;
-}
-
-
-static void initWuRxContext(wurx_context_t* context){
-	context->wurx_address = DEFAULT_ADDRESS;
-	context->wurx_state = WURX_SLEEP;
-
-	/* use Timer 2 with a 100 us timeout*/
-	HAL_TIM_Base_DeInit(&timeout_timer);
-	timeout_timer.Instance = TIM2;
-}
-
-/* For now let's use the SLOW solution of struct + switch
- *  if 16 MHz is not enough start using uglier but faster solutions
- */
-
-
-/* sets all pins to analog input, but SWD */
+typedef struct wurx_ctxt{
+	wurx_status_t wurx_status;
+	uint32_t	  wurx_timestamp;
+}wurx_ctxt_t;
 
 /**
 * @brief  Main program
 * @param  None
 * @retval None
 */
-int main(void)
-{
-	wurx_context_t wur_ctxt = {0};
-	/* STM32L0xx HAL library initialization:
-	   - Configure the Flash prefetch, Flash preread and Buffer caches
-	   - Systick timer is configured by default as source of time base, but user
-			 can eventually implement his proper time base source (a general purpose
-			 timer for example or other time source), keeping in mind that Time base
-			 duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
-			 handled in milliseconds basis.
-	   - Low Level Initialization
-	 */
-	HAL_Init();
 
-	/* Configure the system Power */
-	SystemPower_Config();
-    HAL_SuspendTick();
-	pinModeinit();
-	COMP_Config(&hcomp1);
-	TIMER_Config(TIM2);
-	initWuRxContext(&wur_ctxt);
-	PIN_RESET(GPIOA, ADDR_OK);
+static wurx_ctxt_t wurx_ctxt = {
+		.wurx_status = WUR_SLEEPING,
+		.wurx_timestamp = 0
+};
+
+static void loopMain(wurx_context_t* context){
+	uint16_t wake_ms;
+	uint32_t current_tick;
+
 	while (1)
 	{
-		switch(wur_ctxt.wurx_state){
-			case WURX_SLEEP:
-				/* this one blocks until MCU wakes*/
-				sleepMCU();
-#ifdef ULP
-				__TIM2_CLK_ENABLE();
-#endif
-				/* wait 100 us for preamble init.*/
-				TIMER_ENABLE(TIM2);
-				PIN_SET(GPIOA, ADDR_OK);
-				wur_ctxt.wurx_state = WURX_WAITING_PREAMBLE;
-				break;
-			case WURX_WAITING_PREAMBLE:
-				if(timer_timeout == 2){
-					timer_timeout = 0;
-					PIN_RESET(GPIOA, ADDR_OK);
-					TIMER_DISABLE(TIM2);
-#ifdef ULP
-					__TIM2_CLK_DISABLE();
-#endif
-					wur_ctxt.wurx_state = WURX_SLEEP;
+		switch(wurx_ctxt.wurx_status){
+			case WUR_SLEEPING:
+				WuR_go_sleep(context);
+				/* configure on wakeup for HSI use*/
+				SystemPower_sleep();
+				if(WuR_operation){
+					wake_ms = WuR_process_frame(context, 1);
+					WuR_operation = 0;
+					if(!wake_ms){
+						break;
+					}
+					/* activate HSE for use*/
+					SystemPower_data();
+					wurx_ctxt.wurx_timestamp = HAL_GetTick() + wake_ms;
+					wurx_ctxt.wurx_status = WUR_WAIT_DATA;
+				}else if(I2C_operation){
+					I2C_operation = 0;
+					wurx_ctxt.wurx_timestamp = HAL_GetTick() + 10;
+					wurx_ctxt.wurx_status = WUR_WAIT_I2C;
 				}
-				/* add logic to read the preamble */
 				break;
-			case WURX_DECODING_PREAMBLE:
+			case WUR_WAIT_DATA:
+				current_tick = HAL_GetTick();
+				/* activate again the reception interrupt*/
+				pinModeWaitFrame();
+				/* loop used inside the state to minimize jitter*/
+				while(current_tick < wurx_ctxt.wurx_timestamp){
+					if(WuR_operation){
+					    PIN_SET(GPIOA, WAKE_UP_FAST);
+						pinModeFrameReceived();
+						PIN_RESET(GPIOA, WAKE_UP_FAST);
+					    WuR_process_frame(context, 0);
+						pinModeWaitFrame();
+						WuR_operation = 0;
+					}
+					current_tick = HAL_GetTick();
+				}
+				/* deactivate HSE and return to the default clock config with HSI*/
+				SystemPower_wake();
+				wurx_ctxt.wurx_status = WUR_SLEEPING;
 				break;
-			case WURX_DECODING_PAYLOAD:
+			case WUR_WAIT_I2C:
+				current_tick = HAL_GetTick();
+				while(current_tick < wurx_ctxt.wurx_timestamp){
+					HAL_Delay(10);
+					break;
+				}
+				wurx_ctxt.wurx_status = WUR_SLEEPING;
 				break;
 			default:
-			initWuRxContext(&wur_ctxt);
-			break;
+				wurx_ctxt.wurx_status = WUR_SLEEPING;
 		}
 	}
 }
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(GPIO_Pin == WAKE_UP_I2C)
+  {
+	  /* flag the start of an I2C operation */
+	  I2C_operation = 1;
+  }
+}
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
+	  /* Clear Wake Up Flag */
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+	  WuR_operation = 1;
+}
+
+int main(void)
+{
+
+	wurx_context_t context;
+	WuR_init_context(&context);
+
+	HAL_Init();
+
+	/* Configure the system Power for HSI use */
+	Initial_SystemPower_Config();
+	i2CConfig(&context, &I2cHandle);
+	pinModeinit();
+	TIMER_Config();
+	COMP_Config(&hcomp1);
+
+	loopMain(&context);
+
+}

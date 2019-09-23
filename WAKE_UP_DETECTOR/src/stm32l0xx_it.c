@@ -13,9 +13,11 @@
 #include "stm32l0xx.h"
 #include "stm32l0xx_it.h"
 #include "config_defines.h"
+#include "periph_config.h"
 
 #define USE_CMP
 
+extern I2C_HandleTypeDef I2cHandle;
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -47,12 +49,17 @@ void ADC1_COMP_IRQHandler(void)
 
 void EXTI4_15_IRQHandler(void)
 {
-  HAL_GPIO_EXTI_IRQHandler(INPUT_FAST);
+  HAL_GPIO_EXTI_IRQHandler(WAKE_UP_I2C);
 }
 
 void TIM2_IRQHandler(void)
 {
   HAL_TIM_IRQHandler(&timeout_timer);
+}
+void I2Cx_IRQHandler(void)
+{
+	HAL_I2C_EV_IRQHandler(&I2cHandle);
+	HAL_I2C_ER_IRQHandler(&I2cHandle);
 }
 
 

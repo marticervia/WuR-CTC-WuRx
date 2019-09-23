@@ -54,6 +54,8 @@ void SVC_Handler(void);
 void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
+void I2Cx_IRQHandler(void);
+void EXTI4_15_IRQHandler(void);
 
 #ifdef __cplusplus
 }

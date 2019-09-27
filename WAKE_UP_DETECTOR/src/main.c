@@ -43,17 +43,17 @@ static void loopMain(wurx_context_t* context){
 	{
 		switch(wurx_ctxt.wurx_status){
 			case WUR_SLEEPING:
+				I2C_operation = 0;
+				WuR_operation = 0;
 				WuR_go_sleep(context);
 				/* configure on wakeup for HSI use*/
 				SystemPower_sleep();
-				if(WuR_operation){
+				if(WuR_operation && !I2C_operation){
 					wake_ms = WuR_process_frame(context, 1);
 					WuR_operation = 0;
 					if(!wake_ms){
 						break;
 					}
-					/* activate HSE for use*/
-					SystemPower_data();
 					wurx_ctxt.wurx_timestamp = HAL_GetTick() + wake_ms;
 					wurx_ctxt.wurx_status = WUR_WAIT_DATA;
 				}else if(I2C_operation){
@@ -63,18 +63,23 @@ static void loopMain(wurx_context_t* context){
 				}
 				break;
 			case WUR_WAIT_DATA:
+				/* activate HSE for use*/
+			    HAL_ResumeTick();
+				SystemPower_data();
+				pinModeWaitFrame();
 				current_tick = HAL_GetTick();
 				/* activate again the reception interrupt*/
-				pinModeWaitFrame();
 				/* loop used inside the state to minimize jitter*/
 				while(current_tick < wurx_ctxt.wurx_timestamp){
 					if(WuR_operation){
+					    HAL_SuspendTick();
 					    PIN_SET(GPIOA, WAKE_UP_FAST);
 						pinModeFrameReceived();
 						PIN_RESET(GPIOA, WAKE_UP_FAST);
 					    WuR_process_frame(context, 0);
 						pinModeWaitFrame();
 						WuR_operation = 0;
+					    HAL_ResumeTick();
 					}
 					current_tick = HAL_GetTick();
 				}
@@ -83,10 +88,14 @@ static void loopMain(wurx_context_t* context){
 				wurx_ctxt.wurx_status = WUR_SLEEPING;
 				break;
 			case WUR_WAIT_I2C:
+			    HAL_ResumeTick();
 				current_tick = HAL_GetTick();
 				while(current_tick < wurx_ctxt.wurx_timestamp){
-					HAL_Delay(10);
-					break;
+					current_tick = HAL_GetTick();
+					if(I2C_operation){
+						HAL_Delay(1);
+						break;
+					}
 				}
 				wurx_ctxt.wurx_status = WUR_SLEEPING;
 				break;

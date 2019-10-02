@@ -89,14 +89,14 @@ static void loopMain(wurx_context_t* context){
 				break;
 			case WUR_WAIT_I2C:
 			    HAL_ResumeTick();
-				current_tick = HAL_GetTick();
-				while(current_tick < wurx_ctxt.wurx_timestamp){
-					current_tick = HAL_GetTick();
-					if(I2C_operation){
-						HAL_Delay(1);
-						break;
-					}
-				}
+			    do
+			    {
+			    	I2C_operation = 0;
+					HAL_Delay(2);
+					while(i2Cbusy());
+			    }
+			    while(I2C_operation);
+
 				wurx_ctxt.wurx_status = WUR_SLEEPING;
 				break;
 			default:

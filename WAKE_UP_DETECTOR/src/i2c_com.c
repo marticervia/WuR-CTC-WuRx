@@ -35,7 +35,7 @@ static void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
 	}
 }
 
-static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandle){
+static inline void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandle){
 	uint8_t register_id;
 	uint8_t operation_id;
 	uint16_t address = 0;
@@ -83,7 +83,6 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 							System_Error_Handler();
 							return;
 						}
-
 					}
 					else{
 						address = WuR_get_hex_addr(wur_context);
@@ -103,9 +102,16 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 						//write is not supported on this register
 						reset_i2c_state(I2cHandle);
 					}
+					uint8_t frame_len;
 
-					memcpy((uint8_t*)i2c_context.i2c_frame_buffer, (uint8_t*)wur_context->frame_buffer, wur_context->frame_len);
-					if(HAL_I2C_Slave_Transmit_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, wur_context->frame_len) != HAL_OK)
+					if(wur_context->frame_len == 0){
+						frame_len = 1;
+					}else{
+						frame_len = wur_context->frame_len;
+					}
+
+					memcpy((uint8_t*)i2c_context.i2c_frame_buffer, (uint8_t*)wur_context->frame_buffer, frame_len);
+					if(HAL_I2C_Slave_Transmit_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, frame_len) != HAL_OK)
 					{
 					/* Transfer error in transmission process */
 						System_Error_Handler();
@@ -126,7 +132,6 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 
 			i2c_context.i2c_last_reg = register_id;
 			i2c_context.i2c_last_operation = operation_id;
-
 			break;
 		case I2C_PERFORM_WRITE:
 			if(i2c_operation != I2C_SUCCESS_READ){

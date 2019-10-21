@@ -9,12 +9,13 @@
 #define FLAGS_LEN 4
 #define LENGTH_LEN 8
 #define WUR_DATA_OFFSET_BYTES 3
+#define WUR_FLAGS_OFFSET_BYTES 1
 
 #define LEN_ACK_FRAME 8
 #define LEN_WUR_FRAME 8
 #define MAX_LEN_DATA_FRAME 128
 
-#define MAX_FRAME_LEN 20
+#define MAX_FRAME_LEN 96
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/

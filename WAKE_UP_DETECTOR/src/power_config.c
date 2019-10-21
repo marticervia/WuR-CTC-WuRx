@@ -268,7 +268,6 @@ void SystemPower_sleep(void){
 	pinModeWaitFrame();
     HAL_SuspendTick();
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFE);
-    HAL_ResumeTick();
     /* restart indicator */
     pinModeFrameReceived();
     PIN_SET(GPIOA, WAKE_UP_FAST);

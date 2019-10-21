@@ -35,7 +35,7 @@ static void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
 	}
 }
 
-static inline void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandle){
+static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandle){
 	uint8_t register_id;
 	uint8_t operation_id;
 	uint16_t address = 0;

@@ -104,6 +104,8 @@
         "nop\r\n" \
     );
 
+#define COMP_READ(COMP_TYPE) (READ_BIT(COMP_TYPE, COMP_CSR_COMPxOUTVALUE))
+#define COMP_VALUE COMP_CSR_COMPxOUTVALUE
 /* use ALWAYS values < 0xffff for both of this macros*/
 #define TIMER_SET_PERIOD(TIMx, period) (TIMx->ARR = (uint16_t)period)
 #define TIMER_SET_PRESCALER(TIMx, prescaler) (TIMx->PSC = (uint16_t)prescaler)
@@ -114,8 +116,8 @@
 #define TIMER_UIT_DISABLE(TIMx) (TIMx->CR1&=~(TIM_CR1_URS))
 
 
-#define COMP_NON_INVERTING ((uint16_t)GPIO_PIN_0)
-#define COMP_INVERTING ((uint16_t)GPIO_PIN_1)
+#define COMP_NON_INVERTING ((uint16_t)GPIO_PIN_3)
+#define COMP_INVERTING ((uint16_t)GPIO_PIN_2)
 #define COMP_OUTPUT ((uint16_t)GPIO_PIN_6)
 #define WAKE_UP_FAST ((uint16_t)GPIO_PIN_4)
 #define ADDR_OK ((uint16_t)GPIO_PIN_9)

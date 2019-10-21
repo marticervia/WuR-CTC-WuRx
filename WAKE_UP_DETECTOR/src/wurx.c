@@ -29,7 +29,7 @@ static const uint8_t CRC_8_TABLE[256] =
 	116, 42,200,150, 21, 75,169,247,182,232, 10, 84,215,137,107, 53
 };
 
-static uint16_t expected_preamble[PREAMBLE_LEN] = {INPUT_FAST, INPUT_FAST};
+static uint32_t expected_preamble[PREAMBLE_LEN] = {COMP_VALUE, COMP_VALUE};
 
 /* the length of the output array must be at least 12!*/
 void WuR_set_hex_addr(uint16_t input_addr, wurx_context_t* context){
@@ -38,7 +38,7 @@ void WuR_set_hex_addr(uint16_t input_addr, wurx_context_t* context){
 
 	/* from MSB to LSB*/
 	for(uint8_t bit_index = 0; bit_index < ADDR_LEN; bit_index++){
-		context->wurx_address[bit_index] = (input_addr &  (1 << (11 - bit_index))) ? INPUT_FAST : 0;
+		context->wurx_address[bit_index] = (input_addr &  (1 << (11 - bit_index))) ? COMP_VALUE : 0;
 	}
 }
 
@@ -155,7 +155,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		CLEAR_TIMER_EXPIRED(TIM2);
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
-		result = READ_PIN(GPIOA, INPUT_FAST);
+		result = COMP_READ(COMP2_BASE);
 
 		if(result != expected_preamble[loop]){
 			PIN_SET(GPIOA, WAKE_UP_FAST);
@@ -174,7 +174,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		CLEAR_TIMER_EXPIRED(TIM2);
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
-		result = READ_PIN(GPIOA, INPUT_FAST);
+		result = COMP_READ(COMP2_BASE);
 		if(result != context->wurx_address[loop]){
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
@@ -197,7 +197,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	CLEAR_TIMER_EXPIRED(TIM2);
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
-	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	frame_buffer[offset] = (COMP_READ(COMP2_BASE) != 0);
 
 	offset++;
 
@@ -205,7 +205,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	CLEAR_TIMER_EXPIRED(TIM2);
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
-	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	frame_buffer[offset] = (COMP_READ(COMP2_BASE) != 0);
 
 	offset++;
 
@@ -213,7 +213,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	CLEAR_TIMER_EXPIRED(TIM2);
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
-	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	frame_buffer[offset] = (COMP_READ(COMP2_BASE) != 0);
 
 	offset++;
 
@@ -222,7 +222,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	CLEAR_TIMER_EXPIRED(TIM2);
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
-	frame_buffer[offset] = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+	frame_buffer[offset] = (COMP_READ(COMP2_BASE) != 0);
 
 	offset++;
 
@@ -233,7 +233,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		CLEAR_TIMER_EXPIRED(TIM2);
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
-		result = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+		result = (COMP_READ(COMP2_BASE) != 0);
 
 		if(result){
 			length |= 1 << (7 - loop);
@@ -253,7 +253,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 			CLEAR_TIMER_EXPIRED(TIM2);
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			result = (READ_PIN(GPIOA, INPUT_FAST) != 0);
+			result = (COMP_READ(COMP2_BASE) != 0);
 
 			if(result){
 				byte_res |= 1 << (7 - loop);

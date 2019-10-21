@@ -35,7 +35,7 @@ typedef enum wurx_states{
 typedef struct wurx_context{
 	wurx_states_t wurx_state;
 	wurx_states_t wurx_osc_active;
-	uint16_t wurx_address[ADDR_LEN];
+	uint32_t wurx_address[ADDR_LEN];
 	uint8_t frame_len;
 	uint8_t frame_buffer[MAX_FRAME_LEN];
 }wurx_context_t;

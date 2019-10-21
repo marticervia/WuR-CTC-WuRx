@@ -15,33 +15,28 @@ void HAL_COMP_MspInit(COMP_HandleTypeDef* hcomp)
 {
 
   GPIO_InitTypeDef GPIO_InitStructure = {0};
-  /*##-1- Enable peripherals and GPIO Clocks #################################*/
-  /* Enable GPIO clock */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-
-  /* copnfigure PA2 as COMP2 output for debugging purposes*/
-  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
-
-  GPIO_InitStructure.Pin = COMP_OUTPUT;
-  GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStructure.Pull = GPIO_NOPULL;
-  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_MEDIUM;
-  GPIO_InitStructure.Alternate = GPIO_AF7_COMP1;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+  if(hcomp->Instance==COMP2)
+  {
+	/*##-1- Enable peripherals and GPIO Clocks #################################*/
+	/* Enable GPIO clock */
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_SYSCFG_CLK_ENABLE();
 
 
-  /* PA0 and PA1 are OK on ANALOG input mode */
-  memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
+	/* PA3 and PA2 are OK on ANALOG input mode */
+	memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 
-  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStructure.Pull = GPIO_NOPULL;
-  GPIO_InitStructure.Pin = COMP_INVERTING | COMP_NON_INVERTING;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
+	GPIO_InitStructure.Pull = GPIO_NOPULL;
+	GPIO_InitStructure.Pin = COMP_INVERTING | COMP_NON_INVERTING;
+	GPIO_InitStructure.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-  /*##-3- Configure the NVIC for COMP1 #######################################*/
-   /* Enable the COMP1 IRQ Channel */
-  HAL_NVIC_SetPriority(ADC1_COMP_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
+	/*##-3- Configure the NVIC for COMP2 #######################################*/
+	/* Enable the COMP1 IRQ Channel */
+	HAL_NVIC_SetPriority(ADC1_COMP_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
+  }
 }
 
 /**
@@ -68,33 +63,36 @@ void HAL_COMP_MspDeInit(COMP_HandleTypeDef* hcomp)
   HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
 }
 
-void COMP_Config(COMP_HandleTypeDef* hcomp1)
+void COMP_Config(COMP_HandleTypeDef* hcomp)
 {
+
   /*##-1- Configure the COMP peripheral ######################################*/
-  hcomp1->Instance = COMP1;
+  hcomp->Instance = COMP2;
+  hcomp->Init.NonInvertingInput  = COMP_INPUT_PLUS_IO1;
+  hcomp->Init.InvertingInput  = COMP_INPUT_MINUS_IO1;
+  hcomp->Init.OutputPol       = COMP_OUTPUTPOL_NONINVERTED;
+  hcomp->Init.Mode            = COMP_POWERMODE_MEDIUMSPEED;
+  hcomp->Init.TriggerMode     = COMP_TRIGGERMODE_IT_RISING;
+  hcomp->Init.LPTIMConnection = COMP_LPTIMCONNECTION_DISABLED;
+  hcomp->Init.WindowMode	   = COMP_WINDOWMODE_DISABLE;
+  hcomp->State		           = HAL_COMP_STATE_RESET;
+  hcomp->Lock				   = HAL_UNLOCKED;
 
-  hcomp1->Init.NonInvertingInput  = COMP_INPUT_PLUS_IO1;
-  hcomp1->Init.InvertingInput  = COMP_INPUT_MINUS_IO1;
-  hcomp1->Init.OutputPol       = COMP_OUTPUTPOL_NONINVERTED;
-  hcomp1->Init.Mode            = COMP_POWERMODE_ULTRALOWPOWER;
-  hcomp1->Init.TriggerMode     = COMP_TRIGGERMODE_IT_RISING;
-  hcomp1->Init.LPTIMConnection = COMP_LPTIMCONNECTION_DISABLED;
-  hcomp1->Init.WindowMode	   = COMP_WINDOWMODE_DISABLE;
-  hcomp1->State		           = HAL_COMP_STATE_RESET;
-  hcomp1->Lock				   = HAL_UNLOCKED;
-
-  if(HAL_COMP_Init(hcomp1) != HAL_OK)
+  if(HAL_COMP_Init(hcomp) != HAL_OK)
   {
     /* Initiliazation Error */
 	  System_Error_Handler();
   }
 
-  /*##-3- Start teh COMP1 and enable the interrupt ###########################*/
-  if(HAL_COMP_Start(hcomp1) != HAL_OK)
+  HAL_COMPEx_EnableVREFINT();
+
+  /*##-3- Start the COMP2 ###########################*/
+  if(HAL_COMP_Start(hcomp) != HAL_OK)
   {
     /* Initiliazation Error */
 	  System_Error_Handler();
   }
+
 }
 
 /**

@@ -104,8 +104,8 @@
         "nop\r\n" \
     );
 
-#define COMP_READ(COMP_TYPE) (READ_BIT(COMP_TYPE, COMP_CSR_COMPxOUTVALUE))
-#define COMP_VALUE COMP_CSR_COMPxOUTVALUE
+#define COMP_READ(COMP) ((uint32_t) (COMP->CSR & COMP_CSR_COMPxOUTVALUE) >> 30)
+#define COMP_VALUE 1
 /* use ALWAYS values < 0xffff for both of this macros*/
 #define TIMER_SET_PERIOD(TIMx, period) (TIMx->ARR = (uint16_t)period)
 #define TIMER_SET_PRESCALER(TIMx, prescaler) (TIMx->PSC = (uint16_t)prescaler)
@@ -116,8 +116,10 @@
 #define TIMER_UIT_DISABLE(TIMx) (TIMx->CR1&=~(TIM_CR1_URS))
 
 
-#define COMP_NON_INVERTING ((uint16_t)GPIO_PIN_3)
-#define COMP_INVERTING ((uint16_t)GPIO_PIN_2)
+#define COMP_NON_INVERTING_1 ((uint16_t)GPIO_PIN_1)
+#define COMP_INVERTING_1 ((uint16_t)GPIO_PIN_0)
+#define COMP_NON_INVERTING_2 ((uint16_t)GPIO_PIN_4)
+#define COMP_INVERTING_2 ((uint16_t)GPIO_PIN_3)
 #define COMP_OUTPUT ((uint16_t)GPIO_PIN_6)
 #define WAKE_UP_FAST ((uint16_t)GPIO_PIN_4)
 #define ADDR_OK ((uint16_t)GPIO_PIN_9)
@@ -139,7 +141,7 @@
 #define I2Cx_IRQn                       I2C1_IRQn
 #define I2Cx_IRQHandler                 I2C1_IRQHandler
 
-void COMP_Config(COMP_HandleTypeDef* hcomp1);
+void COMP_Config(COMP_HandleTypeDef* hcomp1, uint8_t comp_num);
 void TIMER_Config();
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp);
 void pinModeWaitFrame(void);

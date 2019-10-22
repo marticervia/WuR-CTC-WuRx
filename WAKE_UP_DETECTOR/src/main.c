@@ -6,7 +6,7 @@
 #include "i2c_com.h"
 #include "wurx.h"
 
-COMP_HandleTypeDef hcomp;
+COMP_HandleTypeDef hcomp1, hcomp2;
 TIM_HandleTypeDef  timeout_timer;
 
 I2C_HandleTypeDef I2cHandle;
@@ -133,8 +133,8 @@ int main(void)
 	i2CConfig(&context, &I2cHandle);
 	pinModeinit();
 	TIMER_Config();
-	COMP_Config(&hcomp);
-
+	COMP_Config(&hcomp1, 1);
+	COMP_Config(&hcomp2, 2);
 	loopMain(&context);
 
 }

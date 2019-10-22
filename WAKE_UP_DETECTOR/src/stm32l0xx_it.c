@@ -23,7 +23,7 @@ extern I2C_HandleTypeDef I2cHandle;
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables declared in main.c"---------------------------------------------------------*/
-extern COMP_HandleTypeDef     hcomp;
+extern COMP_HandleTypeDef     hcomp1;
 extern TIM_HandleTypeDef    timeout_timer;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -44,7 +44,7 @@ void SysTick_Handler(void)
 
 void ADC1_COMP_IRQHandler(void)
 {
-  HAL_COMP_IRQHandler(&hcomp);
+  HAL_COMP_IRQHandler(&hcomp1);
 }
 
 void EXTI4_15_IRQHandler(void)

@@ -218,10 +218,6 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *I2cHandle)
     * 1- When Slave don't acknowledge it's address, Master restarts communication.
     * 2- When Master don't acknowledge the last data transferred, Slave don't care in this example.
     */
-  if (HAL_I2C_GetError(I2cHandle) != HAL_I2C_ERROR_AF)
-  {
-	  System_Error_Handler();
-  }
   i2c_state_machine(I2C_ERROR, I2cHandle);
 }
 

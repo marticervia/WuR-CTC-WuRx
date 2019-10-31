@@ -21,7 +21,7 @@ typedef struct i2c_context{
 static wurx_context_t* wur_context = NULL;
 volatile static i2c_context_t i2c_context = {0};
 
-static void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
+void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
 
 	i2c_context.i2c_state = I2C_WAITING_OPERATION;
 	i2c_context.i2c_last_reg = I2C_NONE_REGISTER;
@@ -35,6 +35,14 @@ static void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
 	}
 }
 
+static void reset_i2c_coms(I2C_HandleTypeDef *I2cHandle){
+
+	HAL_I2C_DeInit(I2cHandle);
+	i2CConfig(wur_context, I2cHandle);
+	reset_i2c_state(I2cHandle);
+}
+
+
 static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandle){
 	uint8_t register_id;
 	uint8_t operation_id;
@@ -42,7 +50,7 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 
 	if(i2c_operation == I2C_ERROR){
 		/* restore to the initial state!*/
-		reset_i2c_state(I2cHandle);
+		reset_i2c_coms(I2cHandle);
 		return;
 	}
 
@@ -61,7 +69,7 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 				case I2C_STATUS_REGISTER:
 					if(operation_id == I2C_WRITE_OP){
 						//write is not supported on this register
-						reset_i2c_state(I2cHandle);
+						reset_i2c_coms(I2cHandle);
 					}
 					else{
 						i2c_context.i2c_frame_buffer[0] = wur_context->wurx_state;
@@ -70,8 +78,7 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 						if(HAL_I2C_Slave_Transmit_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, 2) != HAL_OK)
 						{
 						/* Transfer error in transmission process */
-							System_Error_Handler();
-							return;
+							reset_i2c_coms(I2cHandle);
 						}
 					}
 					break;
@@ -80,8 +87,7 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 						if(HAL_I2C_Slave_Receive_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, 2) != HAL_OK)
 						{
 						/* Transfer error in transmission process */
-							System_Error_Handler();
-							return;
+							reset_i2c_coms(I2cHandle);
 						}
 					}
 					else{
@@ -92,8 +98,7 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 						if(HAL_I2C_Slave_Transmit_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, 2) != HAL_OK)
 						{
 						/* Transfer error in reception process */
-							System_Error_Handler();
-							return;
+							reset_i2c_coms(I2cHandle);
 						}
 					}
 					break;
@@ -114,13 +119,12 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 					if(HAL_I2C_Slave_Transmit_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, frame_len) != HAL_OK)
 					{
 					/* Transfer error in transmission process */
-						System_Error_Handler();
-						return;
+						reset_i2c_coms(I2cHandle);
 					}
 					break;
 
 				default:
-					reset_i2c_state(I2cHandle);
+					reset_i2c_coms(I2cHandle);
 					return;
 			}
 			/* successful start of read/write operation, save status for completition.*/
@@ -137,11 +141,12 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 			if(i2c_operation != I2C_SUCCESS_READ){
 				//wrong operation for the current state!
 				reset_i2c_state(I2cHandle);
+				break;
 			}
 			if(i2c_context.i2c_last_reg == I2C_NONE_REGISTER){
 				/* Should not happen,operation not started?!*/
 				reset_i2c_state(I2cHandle);
-				return;
+				break;
 			}
 			switch(i2c_context.i2c_last_reg){
 				case I2C_ADDR_REGISTER:
@@ -149,23 +154,23 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 					address |= (i2c_context.i2c_frame_buffer[0] & 0x0F) << 8;
 					address |= i2c_context.i2c_frame_buffer[1];
 					WuR_set_hex_addr(address, wur_context);
-					reset_i2c_state(I2cHandle);
 					break;
 				default:
 					//Operation not suported on write access
-					reset_i2c_state(I2cHandle);
-					return;
+					break;
 			}
+			reset_i2c_state(I2cHandle);
 			break;
 		case I2C_PERFORM_READ:
 			if(i2c_operation != I2C_SUCCESS_WRITE){
 				//wrong operation for the current state!
 				reset_i2c_state(I2cHandle);
+				break;
 			}
 			if(i2c_context.i2c_last_reg == I2C_NONE_REGISTER){
 				/* Should not happen,operation not started?!*/
 				reset_i2c_state(I2cHandle);
-				return;
+				break;
 			}
 			switch(i2c_context.i2c_last_reg){
 				case I2C_FRAME_REGISTER:
@@ -248,7 +253,6 @@ void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle){
 	  HAL_I2CEx_ConfigAnalogFilter(I2cHandle,I2C_ANALOGFILTER_ENABLE);
 	  //HAL_I2CEx_EnableWakeUp(I2cHandle);
 
-	  reset_i2c_state(I2cHandle);
 }
 
 uint8_t i2Cbusy(void){

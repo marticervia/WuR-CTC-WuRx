@@ -131,6 +131,7 @@ int main(void)
 	/* Configure the system Power for HSI use */
 	Initial_SystemPower_Config();
 	i2CConfig(&context, &I2cHandle);
+	reset_i2c_state(&I2cHandle);
 	pinModeinit();
 	TIMER_Config();
 	COMP_Config(&hcomp1, 1);

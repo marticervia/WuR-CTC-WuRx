@@ -49,7 +49,7 @@ void Initial_SystemPower_Config(void)
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
 	/* Used in all examples, maybe its the most common trim.*/
-	RCC_OscInitStruct.HSICalibrationValue = 0x0E;
+	RCC_OscInitStruct.HSICalibrationValue = 0x0D;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	  System_Error_Handler();
@@ -115,7 +115,7 @@ void SystemPower_ConfigSTOP(void)
 	RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
 	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
-	RCC_OscInitStruct.HSICalibrationValue = 0x0E;
+	RCC_OscInitStruct.HSICalibrationValue = 0x0D;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	  System_Error_Handler();
@@ -161,7 +161,7 @@ void SystemPower_wake(void){
 	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-	RCC_OscInitStruct.HSICalibrationValue = 0x10;
+	RCC_OscInitStruct.HSICalibrationValue = 0x0D;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	/* Initialization Error */

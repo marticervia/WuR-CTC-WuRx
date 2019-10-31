@@ -134,39 +134,68 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	__TIM2_CLK_ENABLE();
 	/* block for 60 us @ 16 ticks x us*/
 	if(from_sleep){
-		TIMER_SET_PERIOD(TIM2, 246);
-	}else{
-		TIMER_SET_PERIOD(TIM2, 666);
-	}
-	TIMER_COMMIT_UPDATE(TIM2);
-	CLEAR_TIMER_EXPIRED(TIM2);
-	TIMER_ENABLE(TIM2);
+		uint8_t last_result = 0;
+		ALIGN_WITH_NOPS;
 
-	/* finish waiting for preamble start */
-	while(!IS_TIMER_EXPIRED(TIM2));
-	/* arm sample timer */
-	TIMER_SET_PERIOD(TIM2, 63);
-	TIMER_COMMIT_UPDATE(TIM2);
-	CLEAR_TIMER_EXPIRED(TIM2);
-
-	PIN_SET(GPIOA, WAKE_UP_FAST);
-	PIN_RESET(GPIOA, WAKE_UP_FAST);
-
-	/* match preamble!*/
-	for(loop = 0; loop < PREAMBLE_LEN; loop++){
-		while(!IS_TIMER_EXPIRED(TIM2));
+		TIMER_SET_PERIOD(TIM2, 63);
+		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
+		TIMER_ENABLE(TIM2);
+
+		for(loop = 0; loop < PREAMBLE_MATCHING_LEN; loop++){
+			while(!IS_TIMER_EXPIRED(TIM2));
+			CLEAR_TIMER_EXPIRED(TIM2);
+			PIN_SET(GPIOA, WAKE_UP_FAST);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			result = COMP_READ(COMP2);
+			if(result && last_result){
+				/* We have a preamble match! */
+				break;
+			}
+			last_result = result;
+
+			if(loop == PREAMBLE_MATCHING_LEN -1){
+				PIN_SET(GPIOA, WAKE_UP_FAST);
+				PIN_RESET(GPIOA, WAKE_UP_FAST);
+				PIN_SET(GPIOA, WAKE_UP_FAST);
+				PIN_RESET(GPIOA, WAKE_UP_FAST);
+			    HAL_ResumeTick();
+				return 0;
+			}
+		}
+	}
+	else{
+		TIMER_SET_PERIOD(TIM2, 666);
+		TIMER_COMMIT_UPDATE(TIM2);
+		CLEAR_TIMER_EXPIRED(TIM2);
+		TIMER_ENABLE(TIM2);
+
+		/* finish waiting for preamble start */
+		while(!IS_TIMER_EXPIRED(TIM2));
+		/* arm sample timer */
+		TIMER_SET_PERIOD(TIM2, 63);
+		TIMER_COMMIT_UPDATE(TIM2);
+		CLEAR_TIMER_EXPIRED(TIM2);
+
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
-		result = COMP_READ(COMP2);
 
-		if(result != expected_preamble[loop]){
+		/* match preamble!*/
+		for(loop = 0; loop < PREAMBLE_LEN; loop++){
+			while(!IS_TIMER_EXPIRED(TIM2));
+			CLEAR_TIMER_EXPIRED(TIM2);
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			PIN_SET(GPIOA, WAKE_UP_FAST);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-		    HAL_ResumeTick();
-			return 0;
+			result = COMP_READ(COMP2);
+
+			if(result != expected_preamble[loop]){
+				PIN_SET(GPIOA, WAKE_UP_FAST);
+				PIN_RESET(GPIOA, WAKE_UP_FAST);
+				PIN_SET(GPIOA, WAKE_UP_FAST);
+				PIN_RESET(GPIOA, WAKE_UP_FAST);
+			    HAL_ResumeTick();
+				return 0;
+			}
 		}
 	}
 

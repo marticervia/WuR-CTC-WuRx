@@ -23,7 +23,7 @@ extern I2C_HandleTypeDef I2cHandle;
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables declared in main.c"---------------------------------------------------------*/
-extern COMP_HandleTypeDef     hcomp1;
+extern COMP_HandleTypeDef     hcomp1, hcomp2;
 extern TIM_HandleTypeDef    timeout_timer;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/

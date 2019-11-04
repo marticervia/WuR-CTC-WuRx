@@ -138,7 +138,7 @@
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
-		        "nop\r\n" \
+		"nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
@@ -188,7 +188,8 @@
 #define COMP_INVERTING_1 ((uint16_t)GPIO_PIN_0)
 #define COMP_NON_INVERTING_2 ((uint16_t)GPIO_PIN_4)
 #define COMP_INVERTING_2 ((uint16_t)GPIO_PIN_3)
-#define COMP_OUTPUT ((uint16_t)GPIO_PIN_6)
+#define COMP_OUTPUT_1 ((uint16_t)GPIO_PIN_11)
+#define COMP_OUTPUT_2 ((uint16_t)GPIO_PIN_12)
 #define WAKE_UP_FAST ((uint16_t)GPIO_PIN_4)
 #define ADDR_OK ((uint16_t)GPIO_PIN_9)
 #define INPUT_FAST ((uint16_t)GPIO_PIN_10)

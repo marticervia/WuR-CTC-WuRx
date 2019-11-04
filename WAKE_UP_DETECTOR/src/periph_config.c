@@ -27,9 +27,18 @@ void HAL_COMP_MspInit(COMP_HandleTypeDef* hcomp)
 
 		GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
 		GPIO_InitStructure.Pull = GPIO_NOPULL;
-		GPIO_InitStructure.Pin = COMP_NON_INVERTING_2 | COMP_NON_INVERTING_2;
+		GPIO_InitStructure.Pin = COMP_INVERTING_2 | COMP_NON_INVERTING_2;
 		HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
-		//HAL_COMPEx_EnableVREFINT();
+
+		__HAL_RCC_GPIOA_CLK_ENABLE();
+		memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
+
+		GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
+		GPIO_InitStructure.Pull = GPIO_NOPULL;
+		GPIO_InitStructure.Pin = COMP_OUTPUT_2;
+		GPIO_InitStructure.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+		GPIO_InitStructure.Alternate = GPIO_AF7_COMP2;
+		HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 	}
 	else if(hcomp->Instance==COMP1)
 	{
@@ -40,6 +49,15 @@ void HAL_COMP_MspInit(COMP_HandleTypeDef* hcomp)
 		GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
 		GPIO_InitStructure.Pull = GPIO_NOPULL;
 		GPIO_InitStructure.Pin = COMP_INVERTING_1 | COMP_NON_INVERTING_1;
+		HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+		memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
+
+		GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
+		GPIO_InitStructure.Pull = GPIO_NOPULL;
+		GPIO_InitStructure.Pin = COMP_OUTPUT_1;
+		GPIO_InitStructure.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+		GPIO_InitStructure.Alternate = GPIO_AF7_COMP1;
 		HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 	}
 	/*##-3- Configure the NVIC for COMPS #######################################*/

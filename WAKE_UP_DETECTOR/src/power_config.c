@@ -100,7 +100,7 @@ void SystemPower_ConfigSTOP(void)
 
 	/* Enable Power Control clock */
 	__HAL_RCC_PWR_CLK_ENABLE();
-    __HAL_RCC_HSI_CALIBRATIONVALUE_ADJUST(0x0E);
+    __HAL_RCC_HSI_CALIBRATIONVALUE_ADJUST(0x0D);
 
 	/* The voltage scaling allows optimizing the power consumption when the device is
 	 clocked below the maximum system frequency, to update the voltage scaling value

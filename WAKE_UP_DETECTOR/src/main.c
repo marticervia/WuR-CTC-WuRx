@@ -56,10 +56,13 @@ static void loopMain(wurx_context_t* context){
 					}
 					wurx_ctxt.wurx_timestamp = HAL_GetTick() + wake_ms;
 					wurx_ctxt.wurx_status = WUR_WAIT_DATA;
-				}else if(I2C_operation){
+				}else if(I2C_operation && !WuR_operation){
 					I2C_operation = 0;
 					wurx_ctxt.wurx_timestamp = HAL_GetTick() + 10;
 					wurx_ctxt.wurx_status = WUR_WAIT_I2C;
+				}else{
+					WuR_operation = 0;
+					I2C_operation = 0;
 				}
 				break;
 			case WUR_WAIT_DATA:
@@ -107,6 +110,7 @@ static void loopMain(wurx_context_t* context){
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
   if(GPIO_Pin == WAKE_UP_I2C)
   {
 	  /* flag the start of an I2C operation */

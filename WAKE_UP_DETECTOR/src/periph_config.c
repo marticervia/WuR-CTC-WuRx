@@ -107,8 +107,6 @@ void COMP_Config(COMP_HandleTypeDef* hcomp, uint8_t comp_number)
 		hcomp->Init.TriggerMode     = COMP_TRIGGERMODE_IT_RISING;
 		hcomp->Init.LPTIMConnection = COMP_LPTIMCONNECTION_DISABLED;
 		hcomp->Init.WindowMode	   = COMP_WINDOWMODE_DISABLE;
-		hcomp->State		           = HAL_COMP_STATE_RESET;
-		hcomp->Lock				   = HAL_UNLOCKED;
 	}
 	else if(comp_number == 2){
 		hcomp->Instance = COMP2;
@@ -119,8 +117,6 @@ void COMP_Config(COMP_HandleTypeDef* hcomp, uint8_t comp_number)
 		hcomp->Init.TriggerMode     = COMP_TRIGGERMODE_NONE;
 		hcomp->Init.LPTIMConnection = COMP_LPTIMCONNECTION_DISABLED;
 		hcomp->Init.WindowMode	   = COMP_WINDOWMODE_DISABLE;
-		hcomp->State		           = HAL_COMP_STATE_RESET;
-		hcomp->Lock				   = HAL_UNLOCKED;
 	}
 	else{
 		/* Initiliazation Error */

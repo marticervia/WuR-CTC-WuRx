@@ -106,22 +106,6 @@
 
 #define ALIGN_WITH_NOPS \
     __asm__ __volatile__ ( \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-		"nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
 		"nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \

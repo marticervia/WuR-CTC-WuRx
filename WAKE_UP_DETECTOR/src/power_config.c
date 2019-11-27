@@ -49,7 +49,7 @@ void Initial_SystemPower_Config(void)
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
 	/* Used in all examples, maybe its the most common trim.*/
-	RCC_OscInitStruct.HSICalibrationValue = 0x0D;
+	RCC_OscInitStruct.HSICalibrationValue = 0x0F;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	  System_Error_Handler();
@@ -100,7 +100,7 @@ void SystemPower_ConfigSTOP(void)
 
 	/* Enable Power Control clock */
 	__HAL_RCC_PWR_CLK_ENABLE();
-    __HAL_RCC_HSI_CALIBRATIONVALUE_ADJUST(0x0D);
+    __HAL_RCC_HSI_CALIBRATIONVALUE_ADJUST(0x0F);
 
 	/* The voltage scaling allows optimizing the power consumption when the device is
 	 clocked below the maximum system frequency, to update the voltage scaling value
@@ -115,11 +115,19 @@ void SystemPower_ConfigSTOP(void)
 	RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
 	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
-	RCC_OscInitStruct.HSICalibrationValue = 0x0D;
+	RCC_OscInitStruct.HSICalibrationValue = 0x0F;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	  System_Error_Handler();
 	}
+
+	/* Enable Ultra low power mode */
+	HAL_PWREx_EnableUltraLowPower();
+
+	/* Enable the fast wake up from Ultra low power mode */
+	HAL_PWREx_EnableFastWakeUp();
+	/* Select HSI as system clock source after Wake Up from Stop mode */
+	__HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);
 
 }
 
@@ -161,7 +169,7 @@ void SystemPower_wake(void){
 	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-	RCC_OscInitStruct.HSICalibrationValue = 0x0D;
+	RCC_OscInitStruct.HSICalibrationValue = 0x0F;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	/* Initialization Error */

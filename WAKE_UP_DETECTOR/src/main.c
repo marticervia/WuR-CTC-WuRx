@@ -118,7 +118,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   }
 #ifndef USE_CMP
   else if(GPIO_Pin == INPUT_FAST){
-	  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 	  WuR_operation = 1;
   }
 #endif

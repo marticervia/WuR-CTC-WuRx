@@ -16,7 +16,7 @@
 #define PIN_SET(GPIOx, GPIO_Pin)  (GPIOx->BSRR = GPIO_Pin)
 #define PIN_RESET(GPIOx, GPIO_Pin)  (GPIOx->BRR = GPIO_Pin)
 /* returns 0 when not set, > 0 when set*/
-#define READ_PIN(GPIOx, GPIO_Pin, GPIO_Num)   ((GPIOx->IDR & GPIO_Pin) << GPIO_Num)
+#define READ_PIN(GPIOx, GPIO_Pin, GPIO_Num)   ((GPIOx->IDR & GPIO_Pin) >> GPIO_Num)
 /*timers, works with all CC1 timers: TIM2, TIM21 and TIM22*/
 #define TIMER_ENABLE(TIMx) 											\
 							do{										\
@@ -147,6 +147,30 @@
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+    );
+
+#define ALIGN_WITH_AWAKE \
+    __asm__ __volatile__ ( \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \

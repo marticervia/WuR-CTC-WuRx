@@ -151,12 +151,12 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 #else
 			result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
 #endif
+			PIN_SET(GPIOA, WAKE_UP_FAST);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
 			if(result && last_result){
 				/* We have a preamble match! */
 				break;
 			}
-			PIN_SET(GPIOA, WAKE_UP_FAST);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
 			last_result = result;
 
 			if(loop == PREAMBLE_MATCHING_LEN -1){
@@ -170,6 +170,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		}
 	}
 	else{
+		ALIGN_WITH_AWAKE;
 		TIMER_SET_PERIOD(TIM2, 666);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);

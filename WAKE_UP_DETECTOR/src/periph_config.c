@@ -285,9 +285,8 @@ void pinModeWaitFrame(void){
 }
 
 void pinModeFrameReceived(void){
-    HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
 #ifdef USE_CMP
-    HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
+    HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
 #endif
-
+    HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
 }

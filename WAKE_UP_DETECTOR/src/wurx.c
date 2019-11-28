@@ -6,6 +6,7 @@
  */
 #include "wurx.h"
 #include "periph_config.h"
+#include "config_defines.h"
 #include "power_config.h"
 #include <string.h>
 
@@ -145,7 +146,11 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		for(loop = 0; loop < PREAMBLE_MATCHING_LEN; loop++){
 			while(!IS_TIMER_EXPIRED(TIM2));
 			CLEAR_TIMER_EXPIRED(TIM2);
+#ifdef USE_CMP
 			result = COMP_READ(COMP2);
+#else
+			result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+#endif
 			if(result && last_result){
 				/* We have a preamble match! */
 				break;
@@ -184,7 +189,11 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		for(loop = 0; loop < PREAMBLE_LEN; loop++){
 			while(!IS_TIMER_EXPIRED(TIM2));
 			CLEAR_TIMER_EXPIRED(TIM2);
+#ifdef USE_CMP
 			result = COMP_READ(COMP2);
+#else
+			result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+#endif
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
 
@@ -204,7 +213,12 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	for(loop = 0; loop < ADDR_LEN; loop++){
 		while(!IS_TIMER_EXPIRED(TIM2));
 		CLEAR_TIMER_EXPIRED(TIM2);
+#ifdef USE_CMP
 		result = COMP_READ(COMP2);
+#else
+		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+
+#endif
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
 		if(result != context->wurx_address[loop]){
@@ -227,21 +241,36 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
-	frame_buffer[offset] = (COMP_READ(COMP2) != 0);
+#ifdef USE_CMP
+	frame_buffer[offset] = COMP_READ(COMP2);
+#else
+	frame_buffer[offset] = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+
+#endif
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	offset++;
 
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
-	frame_buffer[offset] = (COMP_READ(COMP2) != 0);
+#ifdef USE_CMP
+	frame_buffer[offset] = COMP_READ(COMP2);
+#else
+	frame_buffer[offset] = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+
+#endif
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	offset++;
 
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
-	frame_buffer[offset] = (COMP_READ(COMP2) != 0);
+#ifdef USE_CMP
+	frame_buffer[offset] = COMP_READ(COMP2);
+#else
+	frame_buffer[offset] = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+
+#endif
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	offset++;
@@ -249,7 +278,12 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	/* now decode seq number */
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
-	frame_buffer[offset] = (COMP_READ(COMP2) != 0);
+#ifdef USE_CMP
+	frame_buffer[offset] = COMP_READ(COMP2);
+#else
+	frame_buffer[offset] = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+
+#endif
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	offset++;
@@ -259,7 +293,12 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	for(loop = 0; loop < LENGTH_LEN; loop++){
 		while(!IS_TIMER_EXPIRED(TIM2));
 		CLEAR_TIMER_EXPIRED(TIM2);
-		result = (COMP_READ(COMP2) != 0);
+#ifdef USE_CMP
+		result = COMP_READ(COMP2);
+#else
+		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+
+#endif
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
 		if(result){
@@ -278,7 +317,11 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		for(loop = 0; loop < 8; loop++){
 			while(!IS_TIMER_EXPIRED(TIM2));
 			CLEAR_TIMER_EXPIRED(TIM2);
-			result = (COMP_READ(COMP2) != 0);
+#ifdef USE_CMP
+			result = COMP_READ(COMP2);
+#else
+			result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+#endif
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
 			if(result){

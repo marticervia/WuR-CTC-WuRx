@@ -9,7 +9,7 @@
 #define CONFIG_DEFINES_H_
 
 //#define BUTTON_DEBUG
-#define USE_CMP
+//#define USE_CMP
 //#define BUSY_WAIT
 #define USE_ULP
 

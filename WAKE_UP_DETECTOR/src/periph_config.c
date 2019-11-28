@@ -137,19 +137,6 @@ void COMP_Config(COMP_HandleTypeDef* hcomp, uint8_t comp_number)
 	}
 }
 
-/**
-  * @brief GPIO EXTI callback
-  * @param None
-  * @retval None
-  */
-#ifndef USE_CMP
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  /* Clear Wake Up Flag */
-  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-}
-
-#endif
 
 /**
   * @brief TIM MSP Initialization
@@ -253,15 +240,15 @@ void pinModeinit(void){
 	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+#ifndef USE_CMP
 	/* configure fast input*/
 	memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 	GPIO_InitStructure.Pin = INPUT_FAST;
-	GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
+	GPIO_InitStructure.Mode   = GPIO_MODE_IT_RISING;
 	GPIO_InitStructure.Pull = GPIO_NOPULL;
 	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-	/* Enable and set Button EXTI Interrupt to the lowest priority */
-	//HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 0x0F, 0);
+#endif
 
 	memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 	GPIO_InitStructure.Pin = WAKE_UP_I2C;
@@ -290,13 +277,17 @@ void pinModeinit(void){
 }
 
 void pinModeWaitFrame(void){
+#ifdef USE_CMP
     HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
+#endif
     HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 }
 
 void pinModeFrameReceived(void){
     HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
+#ifdef USE_CMP
     HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
+#endif
 
 }

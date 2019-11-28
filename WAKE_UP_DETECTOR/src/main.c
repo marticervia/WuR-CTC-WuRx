@@ -116,6 +116,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	  /* flag the start of an I2C operation */
 	  I2C_operation = 1;
   }
+#ifndef USE_CMP
+  else if(GPIO_Pin == INPUT_FAST){
+	  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+	  WuR_operation = 1;
+  }
+#endif
 }
 
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
@@ -138,8 +144,10 @@ int main(void)
 	reset_i2c_state(&I2cHandle);
 	pinModeinit();
 	TIMER_Config();
+#ifdef USE_CMP
 	COMP_Config(&hcomp1, 1);
 	COMP_Config(&hcomp2, 2);
+#endif
 	loopMain(&context);
 
 }

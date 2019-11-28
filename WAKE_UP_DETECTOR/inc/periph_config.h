@@ -16,7 +16,7 @@
 #define PIN_SET(GPIOx, GPIO_Pin)  (GPIOx->BSRR = GPIO_Pin)
 #define PIN_RESET(GPIOx, GPIO_Pin)  (GPIOx->BRR = GPIO_Pin)
 /* returns 0 when not set, > 0 when set*/
-#define READ_PIN(GPIOx, GPIO_Pin)   (GPIOx->IDR & GPIO_Pin)
+#define READ_PIN(GPIOx, GPIO_Pin, GPIO_Num)   ((GPIOx->IDR & GPIO_Pin) << GPIO_Num)
 /*timers, works with all CC1 timers: TIM2, TIM21 and TIM22*/
 #define TIMER_ENABLE(TIMx) 											\
 							do{										\
@@ -177,6 +177,7 @@
 #define WAKE_UP_FAST ((uint16_t)GPIO_PIN_4)
 #define ADDR_OK ((uint16_t)GPIO_PIN_9)
 #define INPUT_FAST ((uint16_t)GPIO_PIN_10)
+#define INPUT_FAST_NUM (10)
 #define WAKE_UP_I2C ((uint16_t)GPIO_PIN_15)
 
 /* Definition for I2Cx Pins */

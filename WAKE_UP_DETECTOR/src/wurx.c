@@ -136,12 +136,21 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	/* block for 60 us @ 16 ticks x us*/
 	if(from_sleep){
 		uint8_t last_result = 0;
-		ALIGN_WITH_NOPS;
-
-		TIMER_SET_PERIOD(TIM2, 63);
+#ifndef USE_GPIO
+		TIMER_SET_PERIOD(TIM2, 247);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		TIMER_ENABLE(TIM2);
+
+		/* finish waiting for preamble start */
+		while(!IS_TIMER_EXPIRED(TIM2));
+		CLEAR_TIMER_EXPIRED(TIM2);
+#else
+		ALIGN_WITH_NOPS;
+#endif
+
+		TIMER_SET_PERIOD(TIM2, 63);
+		TIMER_COMMIT_UPDATE(TIM2);
 
 		for(loop = 0; loop < PREAMBLE_MATCHING_LEN; loop++){
 			while(!IS_TIMER_EXPIRED(TIM2));
@@ -170,8 +179,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		}
 	}
 	else{
-		ALIGN_WITH_AWAKE;
-		TIMER_SET_PERIOD(TIM2, 666);
+		TIMER_SET_PERIOD(TIM2, 1460);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		TIMER_ENABLE(TIM2);

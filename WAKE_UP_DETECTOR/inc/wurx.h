@@ -16,6 +16,8 @@
 #define LEN_WUR_FRAME 8
 #define MAX_LEN_DATA_FRAME 128
 
+#define DEFAULT_WAKE_TIMEOUT 10000
+
 #define MAX_FRAME_LEN 96
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

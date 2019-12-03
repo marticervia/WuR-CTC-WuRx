@@ -118,10 +118,6 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 
 	if(context->wurx_state == WURX_HAS_FRAME){
 	    HAL_ResumeTick();
-		PIN_SET(GPIOA, ADDR_OK);
-		ADJUST_WITH_NOPS;
-		ADJUST_WITH_NOPS;
-		PIN_RESET(GPIOA, ADDR_OK);
 		return 0;
 	}
 	/*wait 64.25 us for operation completition */
@@ -179,7 +175,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		}
 	}
 	else{
-		TIMER_SET_PERIOD(TIM2, 1460);
+		TIMER_SET_PERIOD(TIM2, 1468);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		TIMER_ENABLE(TIM2);
@@ -362,8 +358,8 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		return 0;
 	}
 
-	/* a WuR wake time is present? */
-	if(length >= 2 && ((context->frame_buffer[WUR_FLAGS_OFFSET_BYTES] & 0x0E) == 0b0010)){
+	/* a WuR WAKE/SLEEP frame is present*/
+	if(length == 2 && ((context->frame_buffer[WUR_FLAGS_OFFSET_BYTES] & 0x0E) == 0b0010)){
 		memcpy(&wake_ms, &context->frame_buffer[WUR_DATA_OFFSET_BYTES], 2);
 		wake_ms = ntohs(wake_ms);
 	}

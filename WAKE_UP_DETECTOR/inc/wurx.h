@@ -56,7 +56,7 @@ void WuR_clear_buffer(wurx_context_t* context);
 void WuR_set_frame_buffer(wurx_context_t* context, uint8_t* buffer, uint8_t length);
 uint8_t WuR_is_CRC_good(wurx_context_t* context);
 
-uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep);
+int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep);
 
 void WuR_go_sleep(wurx_context_t* wur_context);
 void WuR_set_hex_addr(uint16_t input_addr, wurx_context_t* context);

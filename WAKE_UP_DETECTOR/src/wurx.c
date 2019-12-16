@@ -98,8 +98,6 @@ uint8_t WuR_is_CRC_good(wurx_context_t* context){
 
 void WuR_go_sleep(wurx_context_t* wur_context){
 
-    HAL_ResumeTick();
-
 	if(wur_context->wurx_state != WURX_HAS_FRAME){
 		wur_context->wurx_state = WURX_SLEEP;
 		wur_context->frame_len = 0;
@@ -110,15 +108,15 @@ void WuR_go_sleep(wurx_context_t* wur_context){
 /* initialization not really required */
 static uint8_t frame_buffer[24] = {0};
 
-uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
+int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	uint32_t result = 0;
 	uint16_t loop = 0, byte = 0;
 	uint16_t offset = 0, wake_ms = 0;
 	uint16_t length = 0;
 
 	if(context->wurx_state == WURX_HAS_FRAME){
-	    HAL_ResumeTick();
-		return 0;
+		/* notify host via interrupt that a frame is still pending*/
+		return -1;
 	}
 	/*wait 64.25 us for operation completition */
 	context->wurx_state = WURX_DECODING_FRAME;
@@ -169,13 +167,13 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 				PIN_RESET(GPIOA, WAKE_UP_FAST);
 				PIN_SET(GPIOA, WAKE_UP_FAST);
 				PIN_RESET(GPIOA, WAKE_UP_FAST);
-			    HAL_ResumeTick();
-				return 0;
+				return -2;
 			}
 		}
 	}
 	else{
-		TIMER_SET_PERIOD(TIM2, 1468);
+		uint8_t last_result = 0;
+		TIMER_SET_PERIOD(TIM2, 900);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		TIMER_ENABLE(TIM2);
@@ -190,8 +188,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
 
-		/* match preamble!*/
-		for(loop = 0; loop < PREAMBLE_LEN; loop++){
+		for(loop = 0; loop < PREAMBLE_MATCHING_LEN; loop++){
 			while(!IS_TIMER_EXPIRED(TIM2));
 			CLEAR_TIMER_EXPIRED(TIM2);
 #ifdef USE_CMP
@@ -201,14 +198,18 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 #endif
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			if(result && last_result){
+				/* We have a preamble match! */
+				break;
+			}
+			last_result = result;
 
-			if(result != expected_preamble[loop]){
+			if(loop == PREAMBLE_MATCHING_LEN -1){
 				PIN_SET(GPIOA, WAKE_UP_FAST);
 				PIN_RESET(GPIOA, WAKE_UP_FAST);
 				PIN_SET(GPIOA, WAKE_UP_FAST);
 				PIN_RESET(GPIOA, WAKE_UP_FAST);
-			    HAL_ResumeTick();
-				return 0;
+				return -2;
 			}
 		}
 	}
@@ -234,8 +235,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
 			WuR_clear_buffer(context);
-		    HAL_ResumeTick();
-			return 0;
+			return -3;
 		}
 
 		frame_buffer[offset] = (result != 0);
@@ -354,8 +354,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
 		WuR_clear_buffer(context);
-	    HAL_ResumeTick();
-		return 0;
+		return -4;
 	}
 
 	/* a WuR WAKE/SLEEP frame is present*/
@@ -364,14 +363,7 @@ uint16_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		wake_ms = ntohs(wake_ms);
 	}
 
-	/* notify host that we have a frame ready via interrupt and change state accordingly*/
-	PIN_SET(GPIOA, ADDR_OK);
-	ADJUST_WITH_NOPS;
-	ADJUST_WITH_NOPS;
-	PIN_RESET(GPIOA, ADDR_OK);
-
 	context->wurx_state = WURX_HAS_FRAME;
-    HAL_ResumeTick();
 
     /* return wake_time to notify the WuRx the time in ms it must stay awake.*/
 	return wake_ms;

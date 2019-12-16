@@ -36,8 +36,9 @@ static wurx_ctxt_t app_wurx_ctxt = {
 };
 
 static void loopMain(wurx_context_t* context){
-	uint16_t wake_ms;
+	int32_t wake_status;
 	uint32_t current_tick;
+    HAL_SuspendTick();
 
 	while (1)
 	{
@@ -50,16 +51,23 @@ static void loopMain(wurx_context_t* context){
 				SystemPower_sleep();
 				if(WuR_operation && !I2C_operation){
 					/* WAKE MS for a WAKE frame, will be != 0, it will be 0xFFFF for a SLEEP frame*/
-					wake_ms = WuR_process_frame(context, 1);
+					wake_status = WuR_process_frame(context, 1);
 					WuR_operation = 0;
-					if(!wake_ms){
+					if(wake_status < 0){
 						break;
 					}
-					app_wurx_ctxt.wurx_timestamp = HAL_GetTick() + wake_ms;
-					app_wurx_ctxt.wurx_status = WUR_WAIT_DATA;
+					/* notify host that we have a frame ready via interrupt and change state accordingly*/
+					PIN_SET(GPIOA, ADDR_OK);
+					ADJUST_WITH_NOPS;
+					ADJUST_WITH_NOPS;
+					PIN_RESET(GPIOA, ADDR_OK);
+					if(wake_status > 0){
+						app_wurx_ctxt.wurx_timestamp = wake_status;
+						app_wurx_ctxt.wurx_status = WUR_WAIT_DATA;
+					}
 				}else if(I2C_operation && !WuR_operation){
 					I2C_operation = 0;
-					app_wurx_ctxt.wurx_timestamp = HAL_GetTick() + 10;
+					app_wurx_ctxt.wurx_timestamp = 10;
 					app_wurx_ctxt.wurx_status = WUR_WAIT_I2C;
 				}else{
 					WuR_operation = 0;
@@ -68,44 +76,74 @@ static void loopMain(wurx_context_t* context){
 				break;
 			case WUR_WAIT_DATA:
 				/* activate HSE for use*/
-			    HAL_ResumeTick();
 				SystemPower_data();
 				pinModeWaitFrame();
-				current_tick = HAL_GetTick();
+			    HAL_SuspendTick();
+
+				/* prepare TIM6 to end at the timeout */
+				__TIM6_CLK_ENABLE();
+				TIMER_SET_PERIOD(TIM6, app_wurx_ctxt.wurx_timestamp);
+				TIMER_UIT_ENABLE(TIM6);
+				TIMER_COMMIT_UPDATE(TIM6);
+				TIMER_ENABLE(TIM6);
+				WuR_operation = 0;
+
 				/* activate again the reception interrupt*/
 				/* loop used inside the state to minimize jitter*/
-				while(current_tick < app_wurx_ctxt.wurx_timestamp){
+				while(!IS_TIMER_EXPIRED(TIM6))
+				{
 					if(WuR_operation){
-					    HAL_SuspendTick();
 					    PIN_SET(GPIOA, WAKE_UP_FAST);
 						pinModeFrameReceived();
+						WuR_operation = 0;
 						PIN_RESET(GPIOA, WAKE_UP_FAST);
 						/* WAKE MS for a WAKE frame, will be != 0, it will be 0xFFFF for a SLEEP frame*/
-						wake_ms = WuR_process_frame(context, 0);
+						wake_status = WuR_process_frame(context, 0);
+					    PIN_SET(GPIOA, WAKE_UP_FAST);
+					    if(wake_status < 0){
+							WuR_operation = 0;
+							pinModeWaitFrame();
+					    	continue;
+					    }
+					    else if(wake_status == 0x0001){
+							/* if that, set the TIM6 to timeout in 10 ms*/
+							TIMER_SET_PERIOD(TIM6, 10);
+							TIMER_UIT_ENABLE(TIM6);
+							TIMER_COMMIT_UPDATE(TIM6);
+						}
 						pinModeWaitFrame();
 						WuR_operation = 0;
-					    HAL_ResumeTick();
-					    PIN_SET(GPIOA, WAKE_UP_FAST);
-						if(wake_ms == 0x0001){
-							app_wurx_ctxt.wurx_timestamp = current_tick + 10;
-						}
+						PIN_SET(GPIOA, ADDR_OK);
+						ADJUST_WITH_NOPS;
+						ADJUST_WITH_NOPS;
+						PIN_RESET(GPIOA, ADDR_OK);
 					}
-					current_tick = HAL_GetTick();
 				}
+				CLEAR_TIMER_EXPIRED(TIM6);
+				TIMER_DISABLE(TIM6);
+				__TIM6_CLK_DISABLE();
 				/* deactivate HSE and return to the default clock config with HSI*/
 				SystemPower_wake();
 				app_wurx_ctxt.wurx_status = WUR_SLEEPING;
 				break;
 			case WUR_WAIT_I2C:
-			    HAL_ResumeTick();
-			    do
+				/* prepare TIM6 to end at the timeout */
+				__TIM6_CLK_ENABLE();
+				TIMER_SET_PERIOD(TIM6, app_wurx_ctxt.wurx_timestamp);
+				TIMER_UIT_ENABLE(TIM6);
+				TIMER_COMMIT_UPDATE(TIM6);
+				TIMER_ENABLE(TIM6);
+				WuR_operation = 0;
+		    	I2C_operation = 0;
+			    while(!IS_TIMER_EXPIRED(TIM6) || i2Cbusy())
 			    {
-			    	I2C_operation = 0;
-					HAL_Delay(2);
-					while(i2Cbusy());
+			    	if(I2C_operation){
+			    		I2C_operation = 0;
+						TIMER_SET_PERIOD(TIM6, 2);
+						TIMER_COMMIT_UPDATE(TIM6);
+			    	}
 			    }
-			    while(I2C_operation);
-
+				TIMER_DISABLE(TIM6);
 			    app_wurx_ctxt.wurx_status = WUR_SLEEPING;
 				break;
 			default:

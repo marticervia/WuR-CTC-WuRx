@@ -135,10 +135,13 @@ void SystemPower_prepare_sleep(void){
 
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	TIMER_DISABLE(TIM2);
+	TIMER_DISABLE(TIM6);
 	CLEAR_TIMER_EXPIRED(TIM2);
+	CLEAR_TIMER_EXPIRED(TIM6);
 	TIMER_DISABLE(TIM21);
 	CLEAR_TIMER_EXPIRED(TIM21);
 	__TIM2_CLK_DISABLE();
+	__TIM6_CLK_DISABLE();
 	__TIM21_CLK_DISABLE();
 
 }
@@ -272,9 +275,8 @@ void SystemPower_sleep(void){
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
-
+	HAL_SuspendTick();
 	pinModeWaitFrame();
-    HAL_SuspendTick();
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFE);
     /* restart indicator */
     pinModeFrameReceived();

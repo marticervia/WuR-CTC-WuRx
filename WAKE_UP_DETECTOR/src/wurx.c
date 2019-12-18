@@ -132,7 +132,7 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	if(from_sleep){
 		uint8_t last_result = 0;
 #ifndef USE_GPIO
-		TIMER_SET_PERIOD(TIM2, 233);
+		TIMER_SET_PERIOD(TIM2, 305);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		TIMER_ENABLE(TIM2);

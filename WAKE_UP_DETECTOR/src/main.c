@@ -79,7 +79,6 @@ static void loopMain(wurx_context_t* context){
 				SystemPower_data();
 				pinModeWaitFrame();
 			    HAL_SuspendTick();
-
 				/* prepare TIM6 to end at the timeout */
 				__TIM6_CLK_ENABLE();
 				TIMER_SET_PERIOD(TIM6, app_wurx_ctxt.wurx_timestamp);

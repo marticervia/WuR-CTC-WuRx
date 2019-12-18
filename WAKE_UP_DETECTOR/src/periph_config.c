@@ -255,7 +255,7 @@ void pinModeinit(void){
 	GPIO_InitStructure.Pin = INPUT_FAST;
 	GPIO_InitStructure.Mode   = GPIO_MODE_IT_RISING;
 	GPIO_InitStructure.Pull = GPIO_NOPULL;
-	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 #endif
 

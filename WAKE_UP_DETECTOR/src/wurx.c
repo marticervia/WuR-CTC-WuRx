@@ -114,6 +114,9 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	uint16_t loop = 0, byte = 0;
 	uint16_t offset = 0, wake_ms = 0;
 	uint16_t length = 0;
+	uint8_t last_results[3] = {0};
+	last_results[1] = 1;
+	last_results[2] = 1;
 
 	if(context->wurx_state == WURX_HAS_FRAME){
 		/* notify host via interrupt that a frame is still pending*/
@@ -130,9 +133,8 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	__TIM2_CLK_ENABLE();
 	/* block for 60 us @ 16 ticks x us*/
 	if(from_sleep){
-		uint8_t last_result = 0;
 #ifndef USE_GPIO
-		TIMER_SET_PERIOD(TIM2, 305);
+		TIMER_SET_PERIOD(TIM2, 297);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		TIMER_ENABLE(TIM2);
@@ -147,6 +149,8 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		TIMER_SET_PERIOD(TIM2, 63);
 		TIMER_COMMIT_UPDATE(TIM2);
 
+		while(!IS_TIMER_EXPIRED(TIM2));
+		CLEAR_TIMER_EXPIRED(TIM2);
 		for(loop = 0; loop < PREAMBLE_MATCHING_LEN; loop++){
 			while(!IS_TIMER_EXPIRED(TIM2));
 			CLEAR_TIMER_EXPIRED(TIM2);
@@ -157,11 +161,22 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 #endif
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			if(result && last_result){
+
+			if(result && last_results[0]){
 				/* We have a preamble match! */
 				break;
 			}
-			last_result = result;
+			else if(!result && !last_results[0] && !last_results[1] && !last_results[2]){
+				PIN_SET(GPIOA, WAKE_UP_FAST);
+				PIN_RESET(GPIOA, WAKE_UP_FAST);
+				PIN_SET(GPIOA, WAKE_UP_FAST);
+				PIN_RESET(GPIOA, WAKE_UP_FAST);
+				return -2;
+			}
+
+			last_results[2] = last_results[1];
+			last_results[1] = last_results[0];
+			last_results[0] = result;
 
 			if(loop == PREAMBLE_MATCHING_LEN -1){
 				PIN_SET(GPIOA, WAKE_UP_FAST);
@@ -173,8 +188,8 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		}
 	}
 	else{
-		uint8_t last_result = 0;
-		TIMER_SET_PERIOD(TIM2, 900);
+		uint8_t last_result = 0, last_last_result = 1;
+		TIMER_SET_PERIOD(TIM2, 890);
 		TIMER_COMMIT_UPDATE(TIM2);
 		CLEAR_TIMER_EXPIRED(TIM2);
 		TIMER_ENABLE(TIM2);
@@ -199,11 +214,21 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 #endif
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			if(result && last_result){
+			if(result && last_results[0]){
 				/* We have a preamble match! */
 				break;
 			}
-			last_result = result;
+			else if(!result && !last_results[0] && !last_results[1] && !last_results[2]){
+				PIN_SET(GPIOA, WAKE_UP_FAST);
+				PIN_RESET(GPIOA, WAKE_UP_FAST);
+				PIN_SET(GPIOA, WAKE_UP_FAST);
+				PIN_RESET(GPIOA, WAKE_UP_FAST);
+				return -2;
+			}
+
+			last_results[2] = last_results[1];
+			last_results[1] = last_results[0];
+			last_results[0] = result;
 
 			if(loop == PREAMBLE_MATCHING_LEN -1){
 				PIN_SET(GPIOA, WAKE_UP_FAST);
@@ -329,6 +354,19 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 
 		frame_buffer[offset] = result;
 		offset++;
+	}
+
+	if(length > MAX_LEN_DATA_FRAME){
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+		WuR_clear_buffer(context);
+		return -4;
 	}
 
 	/* now we have length, read the rest of bits!*/

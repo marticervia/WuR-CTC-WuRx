@@ -6,11 +6,11 @@
 
 #define PREAMBLE_MATCHING_LEN 20
 #define PREAMBLE_LEN 2
-#define ADDR_LEN 12
+#define ADDR_LEN 10
 #define FLAGS_LEN 4
 #define LENGTH_LEN 8
-#define WUR_DATA_OFFSET_BYTES 3
-#define WUR_FLAGS_OFFSET_BYTES 1
+#define WUR_DATA_OFFSET_BYTES 4
+#define WUR_FLAGS_OFFSET_BYTES 2
 
 #define LEN_ACK_FRAME 8
 #define LEN_WUR_FRAME 8
@@ -48,7 +48,7 @@ typedef struct wurx_context{
 #define ntohs htons
 
 
-#define APPLY_ADDR_MASK(addr) (addr & 0x0FFF)
+#define APPLY_ADDR_MASK(addr) (addr & 0x03FF)
 
 void WuR_init_context(wurx_context_t* context);
 void WuR_clear_context(wurx_context_t* context);

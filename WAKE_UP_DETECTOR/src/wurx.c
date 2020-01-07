@@ -40,7 +40,7 @@ void WuR_set_hex_addr(uint16_t input_addr, wurx_context_t* context){
 
 	/* from MSB to LSB*/
 	for(uint8_t bit_index = 0; bit_index < ADDR_LEN; bit_index++){
-		context->wurx_address[bit_index] = (input_addr &  (1 << (11 - bit_index))) ? COMP_VALUE : 0;
+		context->wurx_address[bit_index] = (input_addr &  (1 << (9 - bit_index))) ? COMP_VALUE : 0;
 	}
 }
 
@@ -48,7 +48,7 @@ uint16_t WuR_get_hex_addr(wurx_context_t* context){
 	uint16_t wur_addr = 0;
 	for(uint8_t bit_index = 0; bit_index < ADDR_LEN; bit_index++){
 		if(context->wurx_address[bit_index]){
-			wur_addr |= 1 << (11 - bit_index);
+			wur_addr |= 1 << (9 - bit_index);
 		}
 	}
 	return wur_addr;
@@ -107,7 +107,7 @@ void WuR_go_sleep(wurx_context_t* wur_context){
 }
 
 /* initialization not really required */
-static uint8_t frame_buffer[24] = {0};
+static uint8_t frame_buffer[32] = {0};
 
 int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	uint32_t result = 0;
@@ -243,6 +243,23 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		offset++;
 	}
 
+	/* store sender address*/
+	for(loop = 0; loop < ADDR_LEN; loop++){
+		while(!IS_TIMER_EXPIRED(TIM2));
+		CLEAR_TIMER_EXPIRED(TIM2);
+#ifdef USE_CMP
+		result = COMP_READ(COMP2);
+#else
+		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+
+#endif
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+		frame_buffer[offset] = (result != 0);
+		offset++;
+	}
+
+
 	/* now decode frame type, 3 bits */
 
 	while(!IS_TIMER_EXPIRED(TIM2));
@@ -251,7 +268,6 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	frame_buffer[offset] = COMP_READ(COMP2);
 #else
 	frame_buffer[offset] = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
-
 #endif
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
@@ -341,7 +357,7 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	/* well, now the frame is over, let's just process it */
 
 	/* first, move from header bits to bytes! */
-	WuR_set_frame_buffer(context, frame_buffer, 24);
+	WuR_set_frame_buffer(context, frame_buffer, 32);
 	context->frame_len += length + 1;
 
 	/* is CRC ok? */

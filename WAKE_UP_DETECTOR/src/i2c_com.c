@@ -152,7 +152,7 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 			switch(i2c_context.i2c_last_reg){
 				case I2C_ADDR_REGISTER:
 					address = 0;
-					address |= (i2c_context.i2c_frame_buffer[0] & 0x0F) << 8;
+					address |= (i2c_context.i2c_frame_buffer[0] & 0x03) << 8;
 					address |= i2c_context.i2c_frame_buffer[1];
 					WuR_set_hex_addr(address, wur_context);
 					break;

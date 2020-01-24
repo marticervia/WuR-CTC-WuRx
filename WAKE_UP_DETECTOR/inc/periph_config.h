@@ -180,6 +180,31 @@
         "nop\r\n" \
     );
 
+#define ALIGN_WITH_SLEEP\
+    __asm__ __volatile__ ( \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+    );
+
+
 #define COMP_READ(COMP) ((uint32_t) (COMP->CSR & COMP_CSR_COMPxOUTVALUE) >> 30)
 #define COMP_VALUE 1
 /* use ALWAYS values < 0xffff for both of this macros*/

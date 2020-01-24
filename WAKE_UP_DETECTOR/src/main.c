@@ -37,7 +37,6 @@ static wurx_ctxt_t app_wurx_ctxt = {
 
 static void loopMain(wurx_context_t* context){
 	int32_t wake_status;
-	uint32_t current_tick;
     HAL_SuspendTick();
 
 	while (1)
@@ -65,7 +64,7 @@ static void loopMain(wurx_context_t* context){
 						app_wurx_ctxt.wurx_timestamp = wake_status;
 						app_wurx_ctxt.wurx_status = WUR_WAIT_DATA;
 					}
-				}else if(I2C_operation && !WuR_operation){
+				}else if(I2C_operation){
 					I2C_operation = 0;
 					app_wurx_ctxt.wurx_timestamp = 10;
 					app_wurx_ctxt.wurx_status = WUR_WAIT_I2C;
@@ -75,9 +74,9 @@ static void loopMain(wurx_context_t* context){
 				}
 				break;
 			case WUR_WAIT_DATA:
-				/* activate HSE for use*/
+				/* activate HSE for use. During this interval the MCU will be irresponsive.*/
+			    PIN_SET(GPIOA, WAKE_UP_FAST);
 				SystemPower_data();
-				pinModeWaitFrame();
 			    HAL_SuspendTick();
 				/* prepare TIM6 to end at the timeout */
 				__TIM6_CLK_ENABLE();
@@ -86,12 +85,14 @@ static void loopMain(wurx_context_t* context){
 				TIMER_COMMIT_UPDATE(TIM6);
 				TIMER_ENABLE(TIM6);
 				WuR_operation = 0;
-
+			    I2C_operation = 0;
+				pinModeWaitFrame();
 				/* activate again the reception interrupt*/
 				/* loop used inside the state to minimize jitter*/
+			    PIN_RESET(GPIOA, WAKE_UP_FAST);
 				while(!IS_TIMER_EXPIRED(TIM6))
 				{
-					if(WuR_operation){
+					if(WuR_operation && !I2C_operation){
 					    PIN_SET(GPIOA, WAKE_UP_FAST);
 						pinModeFrameReceived();
 						WuR_operation = 0;
@@ -116,6 +117,15 @@ static void loopMain(wurx_context_t* context){
 						ADJUST_WITH_NOPS;
 						ADJUST_WITH_NOPS;
 						PIN_RESET(GPIOA, ADDR_OK);
+					}else if(I2C_operation){
+						/* protect I2C transactions from frame interruptions*/
+					    PIN_SET(GPIOA, WAKE_UP_FAST);
+					    PIN_RESET(GPIOA, WAKE_UP_FAST);
+						pinModeFrameReceived();
+					    while(i2Cbusy());
+					    I2C_operation = 0;
+						pinModeWaitFrame();
+					    PIN_SET(GPIOA, WAKE_UP_FAST);
 					}
 				}
 				CLEAR_TIMER_EXPIRED(TIM6);
@@ -126,6 +136,7 @@ static void loopMain(wurx_context_t* context){
 				app_wurx_ctxt.wurx_status = WUR_SLEEPING;
 				break;
 			case WUR_WAIT_I2C:
+				pinModeWaitFrame();
 				/* prepare TIM6 to end at the timeout */
 				__TIM6_CLK_ENABLE();
 				TIMER_SET_PERIOD(TIM6, app_wurx_ctxt.wurx_timestamp);
@@ -134,7 +145,7 @@ static void loopMain(wurx_context_t* context){
 				TIMER_ENABLE(TIM6);
 				WuR_operation = 0;
 		    	I2C_operation = 0;
-			    while(!IS_TIMER_EXPIRED(TIM6) || i2Cbusy())
+			    while(!IS_TIMER_EXPIRED(TIM6))
 			    {
 			    	if(I2C_operation){
 			    		I2C_operation = 0;
@@ -143,6 +154,8 @@ static void loopMain(wurx_context_t* context){
 			    	}
 			    }
 				TIMER_DISABLE(TIM6);
+				I2C_operation = 0;
+				reset_i2c_state(&I2cHandle);
 			    app_wurx_ctxt.wurx_status = WUR_SLEEPING;
 				break;
 			default:
@@ -158,6 +171,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   {
 	  /* flag the start of an I2C operation */
 	  I2C_operation = 1;
+	  i2c_notify_req_operation();
   }
 #ifndef USE_CMP
   else if(GPIO_Pin == INPUT_FAST){

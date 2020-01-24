@@ -16,6 +16,7 @@ typedef struct i2c_context{
 	i2c_registers_t i2c_last_reg;
 	i2c_operation_t i2c_last_operation;
 	uint8_t i2c_frame_buffer[I2C_BUFFER_SIZE];
+	I2C_HandleTypeDef* i2c_handle;
 }i2c_context_t;
 
 static wurx_context_t* wur_context = NULL;
@@ -23,16 +24,10 @@ volatile static i2c_context_t i2c_context = {0};
 
 void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
 
-	i2c_context.i2c_state = I2C_WAITING_OPERATION;
+	i2c_context.i2c_state = I2C_IDLE;
 	i2c_context.i2c_last_reg = I2C_NONE_REGISTER;
 	i2c_context.i2c_last_operation = I2C_NONE_OP;
 	memset((uint8_t*)i2c_context.i2c_frame_buffer, 0, I2C_BUFFER_SIZE);
-
-	if(HAL_I2C_Slave_Receive_IT(I2cHandle,(uint8_t*) i2c_context.i2c_frame_buffer, 1) != HAL_OK)
-	{
-	/* Transfer error in reception process */
-		System_Error_Handler();
-	}
 }
 
 static void reset_i2c_coms(I2C_HandleTypeDef *I2cHandle){
@@ -52,9 +47,15 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 		/* restore to the initial state!*/
 		reset_i2c_coms(I2cHandle);
 		return;
+	}else if(i2c_operation != I2C_SUCCESS_READ && i2c_operation != I2C_SUCCESS_WRITE){
+		reset_i2c_coms(I2cHandle);
+		return;
 	}
 
 	switch(i2c_context.i2c_state){
+		case I2C_IDLE:
+			reset_i2c_coms(I2cHandle);
+			break;
 		case I2C_WAITING_OPERATION:
 			register_id = i2c_context.i2c_frame_buffer[0] >> 1;
 			operation_id = i2c_context.i2c_frame_buffer[0] & 0x01;
@@ -237,6 +238,8 @@ void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle){
 	  I2cHandle->Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
 	  I2cHandle->Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
 
+	  i2c_context.i2c_handle = I2cHandle;
+
 	  if(HAL_I2C_Init(I2cHandle) != HAL_OK)
 	  {
 	    /* Initialization Error */
@@ -256,7 +259,12 @@ void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle){
 }
 
 uint8_t i2Cbusy(void){
-	return i2c_context.i2c_state!= I2C_WAITING_OPERATION;
+	return i2c_context.i2c_state != I2C_IDLE;
+}
+
+void i2c_notify_req_operation(void){
+	i2c_context.i2c_state = I2C_WAITING_OPERATION;
+	HAL_I2C_Slave_Receive_IT(i2c_context.i2c_handle,(uint8_t*) i2c_context.i2c_frame_buffer, 1);
 }
 
 

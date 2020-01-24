@@ -25,6 +25,7 @@
 void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle);
 uint8_t i2Cbusy(void);
 void reset_i2c_state(I2C_HandleTypeDef *I2cHandle);
+void i2c_notify_req_operation(void);
 
 typedef enum i2c_result{
 	I2C_SUCCESS_READ = 0,
@@ -48,9 +49,10 @@ typedef enum i2c_registers{
 }i2c_registers_t;
 
 typedef enum i2c_state{
-	I2C_WAITING_OPERATION = 0,
-	I2C_PERFORM_WRITE = 1,
-	I2C_PERFORM_READ = 2
+	I2C_IDLE = 0,
+	I2C_WAITING_OPERATION = 1,
+	I2C_PERFORM_WRITE = 2,
+	I2C_PERFORM_READ = 3
 }i2c_state_t;
 
 #endif /* I2C_COM_H_ */

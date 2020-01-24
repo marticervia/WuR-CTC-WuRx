@@ -31,7 +31,6 @@ static const uint8_t CRC_8_TABLE[256] =
 	0xDE, 0xD9, 0xD0, 0xD7, 0xC2, 0xC5, 0xCC, 0xCB, 0xE6, 0xE1, 0xE8, 0xEF, 0xFA, 0xFD, 0xF4, 0xF3
 };
 
-static uint32_t expected_preamble[PREAMBLE_LEN] = {COMP_VALUE, COMP_VALUE};
 
 /* the length of the output array must be at least 12!*/
 void WuR_set_hex_addr(uint16_t input_addr, wurx_context_t* context){
@@ -55,9 +54,14 @@ uint16_t WuR_get_hex_addr(wurx_context_t* context){
 }
 
 void WuR_clear_buffer(wurx_context_t* context){
-	memset(context->frame_buffer, 0, 3);
+	memset(context->frame_buffer, 0, MAX_FRAME_LEN);
 	context->frame_len = 0;
 }
+
+void WuR_clear_header(wurx_context_t* context){
+	memset(context->frame_buffer, 0, 3);
+}
+
 
 void WuR_clear_context(wurx_context_t* context){
 	context->wurx_state = WURX_SLEEP;
@@ -75,7 +79,7 @@ void WuR_init_context(wurx_context_t* context){
 void WuR_set_frame_buffer(wurx_context_t* context, uint8_t* buffer, uint8_t length){
 	uint8_t num_byte_loops = length/8;
 
-	WuR_clear_buffer(context);
+	WuR_clear_header(context);
 
 	for(uint8_t byte_loop = 0; byte_loop < num_byte_loops; byte_loop++){
 		for(uint8_t bit_loop = 0; bit_loop < 8; bit_loop++){
@@ -111,9 +115,10 @@ static uint8_t frame_buffer[32] = {0};
 
 int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	uint32_t result = 0;
-	uint16_t loop = 0, byte = 0;
+	uint16_t loop = 0, byte = 0, preamble_timeout;
 	uint16_t offset = 0, wake_ms = 0;
 	uint16_t length = 0;
+	uint8_t preamble_detected;
 	uint8_t last_results[3] = {0};
 	last_results[1] = 1;
 	last_results[2] = 1;
@@ -133,110 +138,96 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	__TIM2_CLK_ENABLE();
 	/* block for 60 us @ 16 ticks x us*/
 	if(from_sleep){
-#ifndef USE_GPIO
-		TIMER_SET_PERIOD(TIM2, 297);
-		TIMER_COMMIT_UPDATE(TIM2);
-		CLEAR_TIMER_EXPIRED(TIM2);
-		TIMER_ENABLE(TIM2);
-
-		/* finish waiting for preamble start */
-		while(!IS_TIMER_EXPIRED(TIM2));
-		CLEAR_TIMER_EXPIRED(TIM2);
-#else
-		ALIGN_WITH_NOPS;
-#endif
-
-		TIMER_SET_PERIOD(TIM2, 63);
-		TIMER_COMMIT_UPDATE(TIM2);
-
-		while(!IS_TIMER_EXPIRED(TIM2));
-		CLEAR_TIMER_EXPIRED(TIM2);
-		for(loop = 0; loop < PREAMBLE_MATCHING_LEN; loop++){
-			while(!IS_TIMER_EXPIRED(TIM2));
-			CLEAR_TIMER_EXPIRED(TIM2);
-#ifdef USE_CMP
-			result = COMP_READ(COMP2);
-#else
-			result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
-#endif
-			PIN_SET(GPIOA, WAKE_UP_FAST);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-
-			if(result && last_results[0]){
-				/* We have a preamble match! */
-				break;
-			}
-			else if(!result && !last_results[0] && !last_results[1] && !last_results[2]){
-				PIN_SET(GPIOA, WAKE_UP_FAST);
-				PIN_RESET(GPIOA, WAKE_UP_FAST);
-				PIN_SET(GPIOA, WAKE_UP_FAST);
-				PIN_RESET(GPIOA, WAKE_UP_FAST);
-				return -2;
-			}
-
-			last_results[2] = last_results[1];
-			last_results[1] = last_results[0];
-			last_results[0] = result;
-
-			if(loop == PREAMBLE_MATCHING_LEN -1){
-				PIN_SET(GPIOA, WAKE_UP_FAST);
-				PIN_RESET(GPIOA, WAKE_UP_FAST);
-				PIN_SET(GPIOA, WAKE_UP_FAST);
-				PIN_RESET(GPIOA, WAKE_UP_FAST);
-				return -2;
-			}
-		}
+		preamble_timeout = 650;
 	}
 	else{
-		uint8_t last_result = 0, last_last_result = 1;
-		TIMER_SET_PERIOD(TIM2, 890);
-		TIMER_COMMIT_UPDATE(TIM2);
-		CLEAR_TIMER_EXPIRED(TIM2);
-		TIMER_ENABLE(TIM2);
+		preamble_timeout = 1300;
+	}
+#ifndef USE_GPIO
+	TIMER_SET_PERIOD(TIM2, preamble_timeout);
+	TIMER_COMMIT_UPDATE(TIM2);
+	CLEAR_TIMER_EXPIRED(TIM2);
+	TIMER_ENABLE(TIM2);
 
-		/* finish waiting for preamble start */
-		while(!IS_TIMER_EXPIRED(TIM2));
-		/* arm sample timer */
-		TIMER_SET_PERIOD(TIM2, 63);
-		TIMER_COMMIT_UPDATE(TIM2);
-		CLEAR_TIMER_EXPIRED(TIM2);
+	/* finish waiting for preamble start */
+	while(!IS_TIMER_EXPIRED(TIM2)){
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+#ifdef USE_CMP
+		result = COMP_READ(COMP2);
+#else
+		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+#endif
+		if(result != 0){
+			continue;
+		}
 
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
 
-		for(loop = 0; loop < PREAMBLE_MATCHING_LEN; loop++){
-			while(!IS_TIMER_EXPIRED(TIM2));
-			CLEAR_TIMER_EXPIRED(TIM2);
-#ifdef USE_CMP
-			result = COMP_READ(COMP2);
+		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+		if(result == 0){
+			preamble_detected = 1;
+			if(from_sleep){
+				ALIGN_WITH_AWAKE;
+			}
+			else{
+				ALIGN_WITH_SLEEP;
+			}
+			break;
+		}
+
+	}
+	if(!preamble_detected){
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+		return -2;
+	}
+	CLEAR_TIMER_EXPIRED(TIM2);
 #else
-			result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+	ALIGN_WITH_NOPS;
 #endif
+
+	TIMER_SET_PERIOD(TIM2, 63);
+	TIMER_COMMIT_UPDATE(TIM2);
+
+	while(!IS_TIMER_EXPIRED(TIM2));
+	CLEAR_TIMER_EXPIRED(TIM2);
+	for(loop = 0; loop < PREAMBLE_MATCHING_LEN; loop++){
+		while(!IS_TIMER_EXPIRED(TIM2));
+		CLEAR_TIMER_EXPIRED(TIM2);
+#ifdef USE_CMP
+		result = COMP_READ(COMP2);
+#else
+		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+#endif
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+
+		if(result && last_results[0]){
+			/* We have a preamble match! */
+			break;
+		}
+		else if(!result && !last_results[0] && !last_results[1] && !last_results[2]){
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			if(result && last_results[0]){
-				/* We have a preamble match! */
-				break;
-			}
-			else if(!result && !last_results[0] && !last_results[1] && !last_results[2]){
-				PIN_SET(GPIOA, WAKE_UP_FAST);
-				PIN_RESET(GPIOA, WAKE_UP_FAST);
-				PIN_SET(GPIOA, WAKE_UP_FAST);
-				PIN_RESET(GPIOA, WAKE_UP_FAST);
-				return -2;
-			}
+			PIN_SET(GPIOA, WAKE_UP_FAST);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			return -2;
+		}
 
-			last_results[2] = last_results[1];
-			last_results[1] = last_results[0];
-			last_results[0] = result;
+		last_results[2] = last_results[1];
+		last_results[1] = last_results[0];
+		last_results[0] = result;
 
-			if(loop == PREAMBLE_MATCHING_LEN -1){
-				PIN_SET(GPIOA, WAKE_UP_FAST);
-				PIN_RESET(GPIOA, WAKE_UP_FAST);
-				PIN_SET(GPIOA, WAKE_UP_FAST);
-				PIN_RESET(GPIOA, WAKE_UP_FAST);
-				return -2;
-			}
+		if(loop == PREAMBLE_MATCHING_LEN -1){
+			PIN_SET(GPIOA, WAKE_UP_FAST);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			PIN_SET(GPIOA, WAKE_UP_FAST);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			return -2;
 		}
 	}
 

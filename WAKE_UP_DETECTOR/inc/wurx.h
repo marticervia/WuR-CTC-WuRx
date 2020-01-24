@@ -18,7 +18,7 @@
 
 #define DEFAULT_WAKE_TIMEOUT 10000
 
-#define MAX_FRAME_LEN 96
+#define MAX_FRAME_LEN (MAX_LEN_DATA_FRAME + WUR_DATA_OFFSET_BYTES + 1)
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/

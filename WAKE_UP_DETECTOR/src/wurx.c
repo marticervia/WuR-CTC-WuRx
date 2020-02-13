@@ -119,6 +119,7 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	uint16_t offset = 0, wake_ms = 0;
 	uint16_t length = 0;
 	uint8_t preamble_detected;
+	uint8_t preamble_iteration = 0;
 	uint8_t last_results[3] = {0};
 	last_results[1] = 1;
 	last_results[2] = 1;
@@ -149,8 +150,43 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_ENABLE(TIM2);
 
-	/* finish waiting for preamble start */
-	while(!IS_TIMER_EXPIRED(TIM2)){
+	/* finish waiting for PHY encapsulation start */
+	while(preamble_iteration < 100){
+		preamble_iteration++;
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+#ifdef USE_CMP
+		result = COMP_READ(COMP2);
+#else
+		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+#endif
+		if(result != 0){
+			continue;
+		}
+
+
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+#ifdef USE_CMP
+		result = COMP_READ(COMP2);
+#else
+		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+#endif
+		if(result != 0){
+			continue;
+		}
+
+		PIN_SET(GPIOA, WAKE_UP_FAST);
+		PIN_RESET(GPIOA, WAKE_UP_FAST);
+#ifdef USE_CMP
+		result = COMP_READ(COMP2);
+#else
+		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
+#endif
+		if(result != 0){
+			continue;
+		}
+
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
 #ifdef USE_CMP
@@ -185,13 +221,14 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
 		return -2;
 	}
-	CLEAR_TIMER_EXPIRED(TIM2);
+
 #else
 	ALIGN_WITH_NOPS;
 #endif
 
 	TIMER_SET_PERIOD(TIM2, 63);
 	TIMER_COMMIT_UPDATE(TIM2);
+	CLEAR_TIMER_EXPIRED(TIM2);
 
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
@@ -209,13 +246,6 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		if(result && last_results[0]){
 			/* We have a preamble match! */
 			break;
-		}
-		else if(!result && !last_results[0] && !last_results[1] && !last_results[2]){
-			PIN_SET(GPIOA, WAKE_UP_FAST);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			PIN_SET(GPIOA, WAKE_UP_FAST);
-			PIN_RESET(GPIOA, WAKE_UP_FAST);
-			return -2;
 		}
 
 		last_results[2] = last_results[1];

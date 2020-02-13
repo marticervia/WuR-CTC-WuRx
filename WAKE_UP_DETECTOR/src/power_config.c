@@ -49,7 +49,7 @@ void Initial_SystemPower_Config(void)
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
 	/* Used in all examples, maybe its the most common trim.*/
-	RCC_OscInitStruct.HSICalibrationValue = 0x0F;
+	RCC_OscInitStruct.HSICalibrationValue = 0x10;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	  System_Error_Handler();
@@ -100,7 +100,7 @@ void SystemPower_ConfigSTOP(void)
 
 	/* Enable Power Control clock */
 	__HAL_RCC_PWR_CLK_ENABLE();
-    __HAL_RCC_HSI_CALIBRATIONVALUE_ADJUST(0x0F);
+    __HAL_RCC_HSI_CALIBRATIONVALUE_ADJUST(0x10);
 
 	/* The voltage scaling allows optimizing the power consumption when the device is
 	 clocked below the maximum system frequency, to update the voltage scaling value
@@ -115,7 +115,7 @@ void SystemPower_ConfigSTOP(void)
 	RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
 	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
-	RCC_OscInitStruct.HSICalibrationValue = 0x0F;
+	RCC_OscInitStruct.HSICalibrationValue = 0x10;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	  System_Error_Handler();
@@ -172,7 +172,7 @@ void SystemPower_wake(void){
 	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-	RCC_OscInitStruct.HSICalibrationValue = 0x0F;
+	RCC_OscInitStruct.HSICalibrationValue = 0x10;
 	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 	/* Initialization Error */

@@ -146,11 +146,7 @@
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
+		"nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
@@ -158,7 +154,11 @@
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
+		"nop\r\n" \
         "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
@@ -166,6 +166,10 @@
 
 #define ALIGN_WITH_AWAKE \
     __asm__ __volatile__ ( \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
 		"nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
@@ -174,7 +178,15 @@
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
+		"nop\r\n" \
         "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
@@ -182,14 +194,6 @@
 
 #define ALIGN_WITH_SLEEP\
     __asm__ __volatile__ ( \
-		"nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-		"nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
-        "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
@@ -198,13 +202,18 @@
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
+		"nop\r\n" \
         "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
     );
 
 
+#define TIM_2_SR ((int *)0x40000010)
 #define COMP_READ(COMP) ((uint32_t) (COMP->CSR & COMP_CSR_COMPxOUTVALUE) >> 30)
 #define COMP_VALUE 1
 /* use ALWAYS values < 0xffff for both of this macros*/
@@ -212,6 +221,8 @@
 #define TIMER_SET_PRESCALER(TIMx, prescaler) (TIMx->PSC = (uint16_t)prescaler)
 #define TIMER_COMMIT_UPDATE(TIMx) (TIMx->EGR = TIM_EGR_UG)
 #define IS_TIMER_EXPIRED(TIMx) ((TIMx->SR & (TIM_FLAG_UPDATE)))
+#define IS_WUR_TIMER_EXPIRED ((*TIM_2_SR) & 1)
+
 #define CLEAR_TIMER_EXPIRED(TIMx) (TIMx->SR &= ~(TIM_FLAG_UPDATE))
 #define TIMER_UIT_ENABLE(TIMx) (TIMx->CR1|= (TIM_CR1_URS))
 #define TIMER_UIT_DISABLE(TIMx) (TIMx->CR1&=~(TIM_CR1_URS))

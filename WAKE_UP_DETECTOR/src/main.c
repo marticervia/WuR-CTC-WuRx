@@ -55,11 +55,6 @@ static void loopMain(wurx_context_t* context){
 					if(wake_status < 0){
 						break;
 					}
-					/* notify host that we have a frame ready via interrupt and change state accordingly*/
-					PIN_SET(GPIOA, ADDR_OK);
-					ADJUST_WITH_NOPS;
-					ADJUST_WITH_NOPS;
-					PIN_RESET(GPIOA, ADDR_OK);
 					if(wake_status > 0){
 						app_wurx_ctxt.wurx_timestamp = wake_status;
 						app_wurx_ctxt.wurx_status = WUR_WAIT_DATA;
@@ -78,6 +73,11 @@ static void loopMain(wurx_context_t* context){
 			    PIN_SET(GPIOA, WAKE_UP_FAST);
 				SystemPower_data();
 			    HAL_SuspendTick();
+				/* notify host that we have a frame ready via interrupt and change state accordingly*/
+				PIN_SET(GPIOA, ADDR_OK);
+				ADJUST_WITH_NOPS;
+				ADJUST_WITH_NOPS;
+				PIN_RESET(GPIOA, ADDR_OK);
 				/* prepare TIM6 to end at the timeout */
 				__TIM6_CLK_ENABLE();
 				TIMER_SET_PERIOD(TIM6, app_wurx_ctxt.wurx_timestamp);
@@ -117,15 +117,19 @@ static void loopMain(wurx_context_t* context){
 						ADJUST_WITH_NOPS;
 						ADJUST_WITH_NOPS;
 						PIN_RESET(GPIOA, ADDR_OK);
-					}else if(I2C_operation){
+					}else if(I2C_operation & !WuR_operation){
 						/* protect I2C transactions from frame interruptions*/
-					    PIN_SET(GPIOA, WAKE_UP_FAST);
 					    PIN_RESET(GPIOA, WAKE_UP_FAST);
-						pinModeFrameReceived();
-					    while(i2Cbusy());
-					    I2C_operation = 0;
-						pinModeWaitFrame();
 					    PIN_SET(GPIOA, WAKE_UP_FAST);
+						pinModeFrameReceived();
+					    while(i2Cbusy()){}
+						pinModeWaitFrame();
+					    I2C_operation = 0;
+					    PIN_RESET(GPIOA, WAKE_UP_FAST);
+					}else{
+						WuR_operation = 0;
+						I2C_operation = 0;
+						reset_i2c_state(&I2cHandle);
 					}
 				}
 				CLEAR_TIMER_EXPIRED(TIM6);
@@ -187,7 +191,7 @@ void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
 }
 
 int main(void)
-{
+ {
 
 	wurx_context_t context;
 	WuR_init_context(&context);

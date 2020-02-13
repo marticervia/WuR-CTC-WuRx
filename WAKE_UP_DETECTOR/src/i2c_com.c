@@ -106,7 +106,7 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 				case I2C_FRAME_REGISTER:
 					if(operation_id == I2C_WRITE_OP){
 						//write is not supported on this register
-						reset_i2c_state(I2cHandle);
+						reset_i2c_coms(I2cHandle);
 					}
 					uint8_t frame_len;
 
@@ -142,12 +142,12 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 		case I2C_PERFORM_WRITE:
 			if(i2c_operation != I2C_SUCCESS_READ){
 				//wrong operation for the current state!
-				reset_i2c_state(I2cHandle);
+				reset_i2c_coms(I2cHandle);
 				break;
 			}
 			if(i2c_context.i2c_last_reg == I2C_NONE_REGISTER){
 				/* Should not happen,operation not started?!*/
-				reset_i2c_state(I2cHandle);
+				reset_i2c_coms(I2cHandle);
 				break;
 			}
 			switch(i2c_context.i2c_last_reg){
@@ -166,12 +166,12 @@ static void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandl
 		case I2C_PERFORM_READ:
 			if(i2c_operation != I2C_SUCCESS_WRITE){
 				//wrong operation for the current state!
-				reset_i2c_state(I2cHandle);
+				reset_i2c_coms(I2cHandle);
 				break;
 			}
 			if(i2c_context.i2c_last_reg == I2C_NONE_REGISTER){
 				/* Should not happen,operation not started?!*/
-				reset_i2c_state(I2cHandle);
+				reset_i2c_coms(I2cHandle);
 				break;
 			}
 			switch(i2c_context.i2c_last_reg){

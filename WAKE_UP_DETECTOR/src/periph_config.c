@@ -289,6 +289,7 @@ void pinModeWaitFrame(void){
 #ifdef USE_CMP
     HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
 #endif
+    __HAL_GPIO_EXTI_CLEAR_IT(INPUT_FAST);
     HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 }

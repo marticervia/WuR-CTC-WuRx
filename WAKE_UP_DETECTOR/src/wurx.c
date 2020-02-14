@@ -137,13 +137,6 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 
 	/* wait for preamble init.*/
 	__TIM2_CLK_ENABLE();
-	/* block for 60 us @ 16 ticks x us*/
-	if(from_sleep){
-		preamble_timeout = 650;
-	}
-	else{
-		preamble_timeout = 1300;
-	}
 #ifndef USE_GPIO
 	TIMER_SET_PERIOD(TIM2, preamble_timeout);
 	TIMER_COMMIT_UPDATE(TIM2);
@@ -204,16 +197,11 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		result = READ_PIN(GPIOA, INPUT_FAST, INPUT_FAST_NUM);
 		if(result == 0){
 			preamble_detected = 1;
-			if(from_sleep){
-				ALIGN_WITH_AWAKE;
-			}
-			else{
-				ALIGN_WITH_SLEEP;
-			}
 			break;
 		}
 
 	}
+
 	if(!preamble_detected){
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
@@ -226,10 +214,28 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	ALIGN_WITH_NOPS;
 #endif
 
+	if(from_sleep){
+		uint16_t counter = 0;
+		while(counter < 16){
+			PIN_SET(GPIOA, WAKE_UP_FAST);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			counter++;
+		}
+	}
+	else{
+		uint16_t counter = 0;
+		while(counter < 10){
+			PIN_SET(GPIOA, WAKE_UP_FAST);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			counter++;
+		}
+	}
+
+
 	TIMER_SET_PERIOD(TIM2, 63);
 	TIMER_COMMIT_UPDATE(TIM2);
 	CLEAR_TIMER_EXPIRED(TIM2);
-
+	/* make sure that we start at the beginning of a period*/
 	while(!IS_TIMER_EXPIRED(TIM2));
 	CLEAR_TIMER_EXPIRED(TIM2);
 	for(loop = 0; loop < PREAMBLE_MATCHING_LEN; loop++){

@@ -190,6 +190,22 @@
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
     );
 
 #define ALIGN_WITH_SLEEP\
@@ -203,6 +219,38 @@
         "nop\r\n" \
         "nop\r\n" \
 		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+		"nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
+        "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \
         "nop\r\n" \

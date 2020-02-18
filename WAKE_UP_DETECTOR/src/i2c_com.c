@@ -16,37 +16,60 @@ typedef struct i2c_context{
 	i2c_registers_t i2c_last_reg;
 	i2c_operation_t i2c_last_operation;
 	uint8_t i2c_frame_buffer[I2C_BUFFER_SIZE];
+	I2C_HandleTypeDef* i2c_handle;
 }i2c_context_t;
 
 static wurx_context_t* wur_context = NULL;
 volatile static i2c_context_t i2c_context = {0};
+volatile static uint8_t pending_i2c_operation;
 
-static void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
-
-	i2c_context.i2c_state = I2C_WAITING_OPERATION;
+void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
+	i2c_context.i2c_state = I2C_IDLE;
 	i2c_context.i2c_last_reg = I2C_NONE_REGISTER;
 	i2c_context.i2c_last_operation = I2C_NONE_OP;
-	memset((uint8_t*)i2c_context.i2c_frame_buffer, 0, I2C_BUFFER_SIZE);
-
-	if(HAL_I2C_Slave_Receive_IT(I2cHandle,(uint8_t*) i2c_context.i2c_frame_buffer, 1) != HAL_OK)
-	{
-	/* Transfer error in reception process */
-		System_Error_Handler();
-	}
+	pending_i2c_operation = I2C_OP_NONE;
+	CLEAR_TIMER_EXPIRED(TIM21);
+	TIMER_DISABLE(TIM21);
+	__TIM21_CLK_DISABLE();
 }
 
-static inline void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I2cHandle){
+static void reset_i2c_coms(I2C_HandleTypeDef *I2cHandle){
+
+	HAL_I2C_DeInit(I2cHandle);
+	i2CConfig(wur_context, I2cHandle);
+	reset_i2c_state(I2cHandle);
+}
+
+void i2c_state_machine(void){
 	uint8_t register_id;
 	uint8_t operation_id;
 	uint16_t address = 0;
 
-	if(i2c_operation == I2C_ERROR){
-		/* restore to the initial state!*/
+	I2C_HandleTypeDef *I2cHandle = i2c_context.i2c_handle;
+
+	if(IS_TIMER_EXPIRED(TIM21)){
 		reset_i2c_state(I2cHandle);
+	}
+
+	if(pending_i2c_operation == I2C_OP_NONE){
+		return;
+	}
+	if(pending_i2c_operation == I2C_ERROR){
+		/* restore to the initial state!*/
+		reset_i2c_coms(I2cHandle);
+		return;
+	}
+	if((pending_i2c_operation == I2C_LISTEN_EVENT) || (pending_i2c_operation == I2C_ADDR_EVENT)){
+		/* we have received a new I2C transaction without interrupt*/
+		//i2c_notify_req_operation();
 		return;
 	}
 
+
 	switch(i2c_context.i2c_state){
+		case I2C_IDLE:
+			reset_i2c_coms(I2cHandle);
+			break;
 		case I2C_WAITING_OPERATION:
 			register_id = i2c_context.i2c_frame_buffer[0] >> 1;
 			operation_id = i2c_context.i2c_frame_buffer[0] & 0x01;
@@ -61,17 +84,16 @@ static inline void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I
 				case I2C_STATUS_REGISTER:
 					if(operation_id == I2C_WRITE_OP){
 						//write is not supported on this register
-						reset_i2c_state(I2cHandle);
+						reset_i2c_coms(I2cHandle);
 					}
-					else{
+					else if(operation_id == I2C_READ_OP){
 						i2c_context.i2c_frame_buffer[0] = wur_context->wurx_state;
 						i2c_context.i2c_frame_buffer[1] = wur_context->frame_len;
 
 						if(HAL_I2C_Slave_Transmit_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, 2) != HAL_OK)
 						{
 						/* Transfer error in transmission process */
-							System_Error_Handler();
-							return;
+							reset_i2c_coms(I2cHandle);
 						}
 					}
 					break;
@@ -80,11 +102,10 @@ static inline void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I
 						if(HAL_I2C_Slave_Receive_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, 2) != HAL_OK)
 						{
 						/* Transfer error in transmission process */
-							System_Error_Handler();
-							return;
+							reset_i2c_coms(I2cHandle);
 						}
 					}
-					else{
+					else if(operation_id == I2C_READ_OP){
 						address = WuR_get_hex_addr(wur_context);
 						i2c_context.i2c_frame_buffer[0] = (address & 0x0F00) >> 8;
 						i2c_context.i2c_frame_buffer[1] = address & 0xFF;
@@ -92,15 +113,14 @@ static inline void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I
 						if(HAL_I2C_Slave_Transmit_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, 2) != HAL_OK)
 						{
 						/* Transfer error in reception process */
-							System_Error_Handler();
-							return;
+							reset_i2c_coms(I2cHandle);
 						}
 					}
 					break;
 				case I2C_FRAME_REGISTER:
 					if(operation_id == I2C_WRITE_OP){
 						//write is not supported on this register
-						reset_i2c_state(I2cHandle);
+						reset_i2c_coms(I2cHandle);
 					}
 					uint8_t frame_len;
 
@@ -114,13 +134,13 @@ static inline void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I
 					if(HAL_I2C_Slave_Transmit_IT(I2cHandle, (uint8_t*) i2c_context.i2c_frame_buffer, frame_len) != HAL_OK)
 					{
 					/* Transfer error in transmission process */
-						System_Error_Handler();
-						return;
+						reset_i2c_coms(I2cHandle);
 					}
+					WuR_clear_context((wurx_context_t*)wur_context);
 					break;
 
 				default:
-					reset_i2c_state(I2cHandle);
+					reset_i2c_coms(I2cHandle);
 					return;
 			}
 			/* successful start of read/write operation, save status for completition.*/
@@ -134,52 +154,55 @@ static inline void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I
 			i2c_context.i2c_last_operation = operation_id;
 			break;
 		case I2C_PERFORM_WRITE:
-			if(i2c_operation != I2C_SUCCESS_READ){
+			if(pending_i2c_operation != I2C_SUCCESS_READ){
 				//wrong operation for the current state!
-				reset_i2c_state(I2cHandle);
+				reset_i2c_coms(I2cHandle);
+				break;
 			}
 			if(i2c_context.i2c_last_reg == I2C_NONE_REGISTER){
 				/* Should not happen,operation not started?!*/
-				reset_i2c_state(I2cHandle);
-				return;
+				reset_i2c_coms(I2cHandle);
+				break;
 			}
 			switch(i2c_context.i2c_last_reg){
 				case I2C_ADDR_REGISTER:
 					address = 0;
-					address |= (i2c_context.i2c_frame_buffer[0] & 0x0F) << 8;
+					address |= (i2c_context.i2c_frame_buffer[0] & 0x03) << 8;
 					address |= i2c_context.i2c_frame_buffer[1];
 					WuR_set_hex_addr(address, wur_context);
-					reset_i2c_state(I2cHandle);
 					break;
 				default:
 					//Operation not suported on write access
-					reset_i2c_state(I2cHandle);
-					return;
-			}
-			break;
-		case I2C_PERFORM_READ:
-			if(i2c_operation != I2C_SUCCESS_WRITE){
-				//wrong operation for the current state!
-				reset_i2c_state(I2cHandle);
-			}
-			if(i2c_context.i2c_last_reg == I2C_NONE_REGISTER){
-				/* Should not happen,operation not started?!*/
-				reset_i2c_state(I2cHandle);
-				return;
-			}
-			switch(i2c_context.i2c_last_reg){
-				case I2C_FRAME_REGISTER:
-					/* as frame has been read, we can flush it and reset the start of the machine*/
-					WuR_clear_context((wurx_context_t*)wur_context);
-					break;
-				default:
 					break;
 			}
 			reset_i2c_state(I2cHandle);
 			break;
+		case I2C_PERFORM_READ:
+			if(pending_i2c_operation != I2C_SUCCESS_WRITE){
+				//wrong operation for the current state!
+				reset_i2c_coms(I2cHandle);
+				break;
+			}
+			if(i2c_context.i2c_last_reg == I2C_NONE_REGISTER){
+				/* Should not happen,operation not started?!*/
+				reset_i2c_coms(I2cHandle);
+				break;
+			}
+			switch(i2c_context.i2c_last_reg){
+			    case I2C_STATUS_REGISTER:
+				case I2C_FRAME_REGISTER:
+					/* as frame has been read, we can flush it and reset the start of the machine*/
+					reset_i2c_state(I2cHandle);
+					break;
+				default:
+					break;
+			}
+			break;
 		default:
+			reset_i2c_state(I2cHandle);
 			break;
 	}
+	pending_i2c_operation = I2C_OP_NONE;
 }
 /**
   * @brief  Tx Transfer completed callback.
@@ -190,7 +213,7 @@ static inline void i2c_state_machine(uint8_t i2c_operation, I2C_HandleTypeDef *I
   */
 void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 {
-  i2c_state_machine(I2C_SUCCESS_WRITE, I2cHandle);
+	pending_i2c_operation = I2C_SUCCESS_WRITE;
 }
 
 /**
@@ -202,14 +225,14 @@ void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *I2cHandle)
   */
 void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 {
-  i2c_state_machine(I2C_SUCCESS_READ, I2cHandle);
+	pending_i2c_operation = I2C_SUCCESS_READ;
 }
 
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *I2cHandle, uint8_t TransferDirection, uint16_t AddrMatchCode){
-  i2c_state_machine(I2C_ADDR_EVENT, I2cHandle);
+	pending_i2c_operation = I2C_ADDR_EVENT;
 }
 void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *I2cHandle){
-  i2c_state_machine(I2C_LISTEN_EVENT, I2cHandle);
+	pending_i2c_operation = I2C_LISTEN_EVENT;
 }
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *I2cHandle)
@@ -218,11 +241,7 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *I2cHandle)
     * 1- When Slave don't acknowledge it's address, Master restarts communication.
     * 2- When Master don't acknowledge the last data transferred, Slave don't care in this example.
     */
-  if (HAL_I2C_GetError(I2cHandle) != HAL_I2C_ERROR_AF)
-  {
-	  System_Error_Handler();
-  }
-  i2c_state_machine(I2C_ERROR, I2cHandle);
+	pending_i2c_operation = I2C_ERROR;
 }
 
 void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle){
@@ -235,6 +254,8 @@ void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle){
 	  I2cHandle->Init.OwnAddress2Masks = I2C_OA2_NOMASK;
 	  I2cHandle->Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
 	  I2cHandle->Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
+
+	  i2c_context.i2c_handle = I2cHandle;
 
 	  if(HAL_I2C_Init(I2cHandle) != HAL_OK)
 	  {
@@ -252,11 +273,20 @@ void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle){
 	  HAL_I2CEx_ConfigAnalogFilter(I2cHandle,I2C_ANALOGFILTER_ENABLE);
 	  //HAL_I2CEx_EnableWakeUp(I2cHandle);
 
-	  reset_i2c_state(I2cHandle);
 }
 
 uint8_t i2Cbusy(void){
-	return i2c_context.i2c_state!= I2C_WAITING_OPERATION;
+	return i2c_context.i2c_state != I2C_IDLE;
+}
+
+void i2c_notify_req_operation(void){
+	i2c_context.i2c_state = I2C_WAITING_OPERATION;
+	__TIM21_CLK_ENABLE();
+	TIMER_SET_PERIOD(TIM21, 5);
+	TIMER_UIT_ENABLE(TIM21);
+	TIMER_COMMIT_UPDATE(TIM21);
+	TIMER_ENABLE(TIM21);
+	HAL_I2C_Slave_Receive_IT(i2c_context.i2c_handle,(uint8_t*) i2c_context.i2c_frame_buffer, 1);
 }
 
 

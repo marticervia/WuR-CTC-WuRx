@@ -571,7 +571,6 @@ HAL_StatusTypeDef HAL_I2C_Mem_Read_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddr
 /**
   * @}
   */
-
 /** @addtogroup I2C_IRQ_Handler_and_Callbacks IRQ Handler and Callbacks
  * @{
  */

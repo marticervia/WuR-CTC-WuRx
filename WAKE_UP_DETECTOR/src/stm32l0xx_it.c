@@ -23,7 +23,7 @@ extern I2C_HandleTypeDef I2cHandle;
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables declared in main.c"---------------------------------------------------------*/
-extern COMP_HandleTypeDef     hcomp1;
+extern COMP_HandleTypeDef     hcomp1, hcomp2;
 extern TIM_HandleTypeDef    timeout_timer;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -49,7 +49,13 @@ void ADC1_COMP_IRQHandler(void)
 
 void EXTI4_15_IRQHandler(void)
 {
-  HAL_GPIO_EXTI_IRQHandler(WAKE_UP_I2C);
+  uint32_t pending_pr = EXTI->PR;
+  if(pending_pr & INPUT_FAST){
+	  HAL_GPIO_EXTI_IRQHandler(INPUT_FAST);
+  }
+  if(pending_pr & WAKE_UP_I2C){
+	  HAL_GPIO_EXTI_IRQHandler(WAKE_UP_I2C);
+  }
 }
 
 void TIM2_IRQHandler(void)

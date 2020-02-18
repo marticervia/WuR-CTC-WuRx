@@ -21,14 +21,16 @@ typedef struct i2c_context{
 
 static wurx_context_t* wur_context = NULL;
 volatile static i2c_context_t i2c_context = {0};
-volatile static uint8_t i2c_operation;
+volatile static uint8_t pending_i2c_operation;
 
 void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
-
 	i2c_context.i2c_state = I2C_IDLE;
 	i2c_context.i2c_last_reg = I2C_NONE_REGISTER;
 	i2c_context.i2c_last_operation = I2C_NONE_OP;
-	i2c_operation = I2C_OP_NONE;
+	pending_i2c_operation = I2C_OP_NONE;
+	CLEAR_TIMER_EXPIRED(TIM21);
+	TIMER_DISABLE(TIM21);
+	__TIM21_CLK_DISABLE();
 }
 
 static void reset_i2c_coms(I2C_HandleTypeDef *I2cHandle){
@@ -38,7 +40,6 @@ static void reset_i2c_coms(I2C_HandleTypeDef *I2cHandle){
 	reset_i2c_state(I2cHandle);
 }
 
-
 void i2c_state_machine(void){
 	uint8_t register_id;
 	uint8_t operation_id;
@@ -46,17 +47,21 @@ void i2c_state_machine(void){
 
 	I2C_HandleTypeDef *I2cHandle = i2c_context.i2c_handle;
 
-	if(i2c_operation == I2C_OP_NONE){
+	if(IS_TIMER_EXPIRED(TIM21)){
+		reset_i2c_state(I2cHandle);
+	}
+
+	if(pending_i2c_operation == I2C_OP_NONE){
 		return;
 	}
-	if(i2c_operation == I2C_ERROR){
+	if(pending_i2c_operation == I2C_ERROR){
 		/* restore to the initial state!*/
 		reset_i2c_coms(I2cHandle);
 		return;
 	}
-	if((i2c_operation == I2C_LISTEN_EVENT) || (i2c_operation == I2C_ADDR_EVENT)){
-		/* restore to the initial state!*/
-		reset_i2c_coms(I2cHandle);
+	if((pending_i2c_operation == I2C_LISTEN_EVENT) || (pending_i2c_operation == I2C_ADDR_EVENT)){
+		/* we have received a new I2C transaction without interrupt*/
+		//i2c_notify_req_operation();
 		return;
 	}
 
@@ -149,7 +154,7 @@ void i2c_state_machine(void){
 			i2c_context.i2c_last_operation = operation_id;
 			break;
 		case I2C_PERFORM_WRITE:
-			if(i2c_operation != I2C_SUCCESS_READ){
+			if(pending_i2c_operation != I2C_SUCCESS_READ){
 				//wrong operation for the current state!
 				reset_i2c_coms(I2cHandle);
 				break;
@@ -173,7 +178,7 @@ void i2c_state_machine(void){
 			reset_i2c_state(I2cHandle);
 			break;
 		case I2C_PERFORM_READ:
-			if(i2c_operation != I2C_SUCCESS_WRITE){
+			if(pending_i2c_operation != I2C_SUCCESS_WRITE){
 				//wrong operation for the current state!
 				reset_i2c_coms(I2cHandle);
 				break;
@@ -194,9 +199,10 @@ void i2c_state_machine(void){
 			}
 			break;
 		default:
+			reset_i2c_state(I2cHandle);
 			break;
 	}
-	i2c_operation = I2C_OP_NONE;
+	pending_i2c_operation = I2C_OP_NONE;
 }
 /**
   * @brief  Tx Transfer completed callback.
@@ -207,7 +213,7 @@ void i2c_state_machine(void){
   */
 void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 {
-	i2c_operation = I2C_SUCCESS_WRITE;
+	pending_i2c_operation = I2C_SUCCESS_WRITE;
 }
 
 /**
@@ -219,14 +225,14 @@ void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *I2cHandle)
   */
 void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 {
-	i2c_operation = I2C_SUCCESS_READ;
+	pending_i2c_operation = I2C_SUCCESS_READ;
 }
 
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *I2cHandle, uint8_t TransferDirection, uint16_t AddrMatchCode){
-	i2c_operation = I2C_ADDR_EVENT;
+	pending_i2c_operation = I2C_ADDR_EVENT;
 }
 void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *I2cHandle){
-	i2c_operation = I2C_LISTEN_EVENT;
+	pending_i2c_operation = I2C_LISTEN_EVENT;
 }
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *I2cHandle)
@@ -235,7 +241,7 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *I2cHandle)
     * 1- When Slave don't acknowledge it's address, Master restarts communication.
     * 2- When Master don't acknowledge the last data transferred, Slave don't care in this example.
     */
-	i2c_operation = I2C_ERROR;
+	pending_i2c_operation = I2C_ERROR;
 }
 
 void i2CConfig(wurx_context_t* context, I2C_HandleTypeDef *I2cHandle){
@@ -275,6 +281,11 @@ uint8_t i2Cbusy(void){
 
 void i2c_notify_req_operation(void){
 	i2c_context.i2c_state = I2C_WAITING_OPERATION;
+	__TIM21_CLK_ENABLE();
+	TIMER_SET_PERIOD(TIM21, 5);
+	TIMER_UIT_ENABLE(TIM21);
+	TIMER_COMMIT_UPDATE(TIM21);
+	TIMER_ENABLE(TIM21);
 	HAL_I2C_Slave_Receive_IT(i2c_context.i2c_handle,(uint8_t*) i2c_context.i2c_frame_buffer, 1);
 }
 

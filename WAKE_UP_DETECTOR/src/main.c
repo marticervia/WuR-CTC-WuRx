@@ -77,6 +77,7 @@ static void loopMain(wurx_context_t* context){
 				PIN_RESET(GPIOA, ADDR_OK);
 				/* prepare TIM6 to end at the timeout */
 				__TIM6_CLK_ENABLE();
+				__TIM21_CLK_ENABLE();
 				TIMER_SET_PERIOD(TIM6, app_wurx_ctxt.wurx_timestamp);
 				TIMER_UIT_ENABLE(TIM6);
 				TIMER_COMMIT_UPDATE(TIM6);
@@ -90,8 +91,8 @@ static void loopMain(wurx_context_t* context){
 				while(!IS_TIMER_EXPIRED(TIM6))
 				{
 					if((context->wurx_state != WURX_HAS_FRAME) && WuR_operation && !I2C_operation){
-					    PIN_SET(GPIOA, WAKE_UP_FAST);
 						pinModeFrameReceived();
+					    PIN_SET(GPIOA, WAKE_UP_FAST);
 						WuR_operation = 0;
 						PIN_RESET(GPIOA, WAKE_UP_FAST);
 						/* WAKE MS for a WAKE frame, will be != 0, it will be 0xFFFF for a SLEEP frame*/
@@ -108,19 +109,19 @@ static void loopMain(wurx_context_t* context){
 							TIMER_UIT_ENABLE(TIM6);
 							TIMER_COMMIT_UPDATE(TIM6);
 						}
-						pinModeWaitFrame();
 						PIN_SET(GPIOA, ADDR_OK);
 						ADJUST_WITH_NOPS;
 						ADJUST_WITH_NOPS;
 						PIN_RESET(GPIOA, ADDR_OK);
+						pinModeWaitFrame();
 					}else if(I2C_operation){
+						pinModeFrameReceived();
 			    		i2c_notify_req_operation();
 					    I2C_operation = 0;
 						WuR_operation = 0;
 						/* protect I2C transactions from frame interruptions*/
 					    PIN_RESET(GPIOA, WAKE_UP_FAST);
 					    PIN_SET(GPIOA, WAKE_UP_FAST);
-						pinModeFrameReceived();
 						/* process first frame */
 				    	i2c_state_machine();
 				    	while(i2Cbusy()){
@@ -134,6 +135,8 @@ static void loopMain(wurx_context_t* context){
 				CLEAR_TIMER_EXPIRED(TIM6);
 				TIMER_DISABLE(TIM6);
 				__TIM6_CLK_DISABLE();
+				__TIM21_CLK_DISABLE();
+
 				/* deactivate HSE and return to the default clock config with HSI*/
 				SystemPower_wake();
 				app_wurx_ctxt.wurx_status = WUR_SLEEPING;
@@ -142,6 +145,7 @@ static void loopMain(wurx_context_t* context){
 				pinModeFrameReceived();
 				/* prepare TIM6 to end at the timeout */
 				PIN_SET(GPIOA, WAKE_UP_FAST);
+				__TIM21_CLK_ENABLE();
 				i2c_notify_req_operation();
 				i2c_state_machine();
 				while(i2Cbusy()){
@@ -152,6 +156,7 @@ static void loopMain(wurx_context_t* context){
 				reset_i2c_state(&I2cHandle);
 			    app_wurx_ctxt.wurx_status = WUR_SLEEPING;
 				pinModeWaitFrame();
+				__TIM21_CLK_DISABLE();
 				break;
 			default:
 				app_wurx_ctxt.wurx_status = WUR_SLEEPING;

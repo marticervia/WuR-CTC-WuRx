@@ -216,7 +216,7 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 
 	if(from_sleep){
 		uint16_t counter = 0;
-		while(counter < 16){
+		while(counter < 14){
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
 			counter++;
@@ -224,7 +224,7 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	}
 	else{
 		uint16_t counter = 0;
-		while(counter < 10){
+		while(counter < 14){
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
 			counter++;

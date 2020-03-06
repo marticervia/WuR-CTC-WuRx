@@ -30,7 +30,6 @@ void reset_i2c_state(I2C_HandleTypeDef *I2cHandle){
 	pending_i2c_operation = I2C_OP_NONE;
 	CLEAR_TIMER_EXPIRED(TIM21);
 	TIMER_DISABLE(TIM21);
-	__TIM21_CLK_DISABLE();
 }
 
 static void reset_i2c_coms(I2C_HandleTypeDef *I2cHandle){
@@ -281,8 +280,7 @@ uint8_t i2Cbusy(void){
 
 void i2c_notify_req_operation(void){
 	i2c_context.i2c_state = I2C_WAITING_OPERATION;
-	__TIM21_CLK_ENABLE();
-	TIMER_SET_PERIOD(TIM21, 5);
+	TIMER_SET_PERIOD(TIM21, 1);
 	TIMER_UIT_ENABLE(TIM21);
 	TIMER_COMMIT_UPDATE(TIM21);
 	TIMER_ENABLE(TIM21);

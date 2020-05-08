@@ -273,6 +273,13 @@ void pinModeinit(void){
 	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+	memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
+	GPIO_InitStructure.Pin = MCU_WOKE;
+	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStructure.Pull = GPIO_PULLDOWN;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+
 	HAL_NVIC_SetPriority((IRQn_Type)(EXTI4_15_IRQn), 3, 0);
 	HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 

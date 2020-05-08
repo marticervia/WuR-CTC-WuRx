@@ -279,6 +279,7 @@
 #define INPUT_FAST ((uint16_t)GPIO_PIN_10)
 #define INPUT_FAST_NUM (10)
 #define WAKE_UP_I2C ((uint16_t)GPIO_PIN_15)
+#define MCU_WOKE ((uint16_t)GPIO_PIN_8)
 
 /* Definition for I2Cx Pins */
 #define I2Cx_SCL_PIN                    GPIO_PIN_8

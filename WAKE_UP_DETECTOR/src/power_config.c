@@ -275,11 +275,13 @@ void SystemPower_sleep(void){
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
 	PIN_SET(GPIOA, WAKE_UP_FAST);
 	PIN_RESET(GPIOA, WAKE_UP_FAST);
+	PIN_RESET(GPIOA, MCU_WOKE);
 	HAL_SuspendTick();
 	pinModeWaitFrame();
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFE);
     /* restart indicator */
     pinModeFrameReceived();
+	PIN_SET(GPIOA, MCU_WOKE);
     PIN_SET(GPIOA, WAKE_UP_FAST);
     /* Configures system clock after wake-up from STOP*/
     SystemPower_ConfigSTOP();

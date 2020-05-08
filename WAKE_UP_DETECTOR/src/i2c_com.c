@@ -280,7 +280,7 @@ uint8_t i2Cbusy(void){
 
 void i2c_notify_req_operation(void){
 	i2c_context.i2c_state = I2C_WAITING_OPERATION;
-	TIMER_SET_PERIOD(TIM21, 1);
+	TIMER_SET_PERIOD(TIM21, 2);
 	TIMER_UIT_ENABLE(TIM21);
 	TIMER_COMMIT_UPDATE(TIM21);
 	TIMER_ENABLE(TIM21);

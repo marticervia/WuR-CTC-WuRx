@@ -119,6 +119,7 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	uint16_t offset = 0, wake_ms = 0;
 	uint16_t length = 0;
 	uint8_t preamble_detected;
+	uint8_t max_preamble_iteration = 0;
 	uint8_t preamble_iteration = 0;
 	uint8_t last_results[3] = {0};
 	last_results[1] = 1;
@@ -143,8 +144,13 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	CLEAR_TIMER_EXPIRED(TIM2);
 	TIMER_ENABLE(TIM2);
 
+	if(from_sleep){
+		max_preamble_iteration = 40;
+	}else{
+		max_preamble_iteration = 80;
+	}
 	/* finish waiting for PHY encapsulation start */
-	while(preamble_iteration < 100){
+	while(preamble_iteration < max_preamble_iteration){
 		preamble_iteration++;
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
@@ -202,7 +208,7 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 
 	}
 
-	if(!preamble_detected){
+	if(preamble_iteration == 40){
 		PIN_SET(GPIOA, WAKE_UP_FAST);
 		PIN_RESET(GPIOA, WAKE_UP_FAST);
 		PIN_SET(GPIOA, WAKE_UP_FAST);
@@ -216,7 +222,7 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 
 	if(from_sleep){
 		uint16_t counter = 0;
-		while(counter < 14){
+		while(counter < 4){
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
 			counter++;
@@ -224,7 +230,7 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 	}
 	else{
 		uint16_t counter = 0;
-		while(counter < 14){
+		while(counter < 8){
 			PIN_SET(GPIOA, WAKE_UP_FAST);
 			PIN_RESET(GPIOA, WAKE_UP_FAST);
 			counter++;
@@ -252,6 +258,12 @@ int32_t WuR_process_frame(wurx_context_t* context, uint8_t from_sleep){
 		if(result && last_results[0]){
 			/* We have a preamble match! */
 			break;
+		}else if((last_results[2] == 0) && (last_results[1] == 0) && (last_results[0] == 0)){
+			PIN_SET(GPIOA, WAKE_UP_FAST);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			PIN_SET(GPIOA, WAKE_UP_FAST);
+			PIN_RESET(GPIOA, WAKE_UP_FAST);
+			return -2;
 		}
 
 		last_results[2] = last_results[1];
